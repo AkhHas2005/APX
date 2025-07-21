@@ -1,0 +1,85 @@
+function doGet(e) {
+  const name = decodeURIComponent(e.parameter.name || "Customer");
+  const productsParam = e.parameter.products || "";
+  const selectedProducts = productsParam.split(",");
+
+  let html = `<h2>Complete Your Order, ${name}</h2>`;
+
+  html += `<form id="orderForm">`;
+
+  selectedProducts.forEach((product, index) => {
+    const safeName = product.trim();
+
+    html += `
+      <div style="margin-bottom: 20px; border-bottom: 1px solid #ccc; padding-bottom: 10px;">
+        <h3>${safeName}</h3>
+        <!-- Optional: Add image URL logic here -->
+        <label for="size_${index}">Size:</label>
+        <select name="size_${index}" required>
+          <option value="">Select a size</option>
+          <option>YS</option>
+          <option>YM</option>
+          <option>YL</option>
+          <option>S</option>
+          <option>M</option>
+          <option>L</option>
+          <option>XL</option>
+        </select><br>
+
+        <label for="qty_${index}">Quantity:</label>
+        <input type="number" name="qty_${index}" min="1" required><br>
+
+        <input type="hidden" name="product_${index}" value="${safeName}">
+      </div>
+    `;
+  });
+
+  html += `
+    <input type="hidden" name="name" value="${name}">
+    <input type="hidden" name="productCount" value="${selectedProducts.length}">
+    <button type="submit">Submit Order</button>
+  </form>
+
+  <div id="responseMsg"></div>
+
+  <script>
+    document.getElementById('orderForm').addEventListener('submit', async function(event) {
+      event.preventDefault();
+      const formData = new FormData(this);
+      const response = await fetch('${ScriptApp.getService().getUrl()}', {
+        method: 'POST',
+        body: formData
+      });
+      const result = await response.text();
+      document.getElementById('responseMsg').innerText = result;
+      this.style.display = 'none';
+    });
+  </script>
+  `;
+
+  return HtmlService.createHtmlOutput(html)
+    .setTitle("Select Sizes & Quantities")
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+function doPost(e) {
+  const formData = e.parameter;
+  const customerName = formData.name;
+  const productCount = parseInt(formData.productCount, 10);
+
+  let summary = `Order from ${customerName}:\n\n`;
+
+  for (let i = 0; i < productCount; i++) {
+    const product = formData[`product_${i}`];
+    const size = formData[`size_${i}`];
+    const qty = formData[`qty_${i}`];
+
+    summary += `• ${product} — Size: ${size}, Qty: ${qty}\n`;
+  }
+
+  // ✅ Example: send to yourself or log it
+  MailApp.sendEmail("akhtarhasan2005@gmail.com", "New Kit Order", summary);
+  Logger.log(summary);
+
+  return ContentService.createTextOutput("✅ Order submitted successfully!");
+}
