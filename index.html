@@ -1,85 +1,115 @@
-function doGet(e) {
-  const name = decodeURIComponent(e.parameter.name || "Customer");
-  const productsParam = e.parameter.products || "";
-  const selectedProducts = productsParam.split(",");
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Start Your Kit Order</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h2, h3 { color: #333; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    td { padding: 5px; }
+    label { display: block; }
+    #phoneError { color: red; font-weight: bold; display: none; }
+  </style>
+</head>
+<body>
+  <h2>Start Your Kit Order</h2>
+  <form id="initialForm">
+    <label>Name:</label>
+    <input type="text" name="name" required><br>
 
-  let html = `<h2>Complete Your Order, ${name}</h2>`;
+    <label>Email:</label>
+    <input type="email" name="email" required><br>
 
-  html += `<form id="orderForm">`;
+    <label>Phone Number:</label>
+    <input type="text" id="phone" name="phone" required><br>
+    <div id="phoneError">Please enter a valid phone number.</div><br>
 
-  selectedProducts.forEach((product, index) => {
-    const safeName = product.trim();
+    <label>Club Name:</label>
+    <input type="text" name="clubName"><br><br>
 
-    html += `
-      <div style="margin-bottom: 20px; border-bottom: 1px solid #ccc; padding-bottom: 10px;">
-        <h3>${safeName}</h3>
-        <!-- Optional: Add image URL logic here -->
-        <label for="size_${index}">Size:</label>
-        <select name="size_${index}" required>
-          <option value="">Select a size</option>
-          <option>YS</option>
-          <option>YM</option>
-          <option>YL</option>
-          <option>S</option>
-          <option>M</option>
-          <option>L</option>
-          <option>XL</option>
-        </select><br>
+    <!-- Product categories and inputs will be injected here -->
+    <div id="productSelection"></div>
 
-        <label for="qty_${index}">Quantity:</label>
-        <input type="number" name="qty_${index}" min="1" required><br>
-
-        <input type="hidden" name="product_${index}" value="${safeName}">
-      </div>
-    `;
-  });
-
-  html += `
-    <input type="hidden" name="name" value="${name}">
-    <input type="hidden" name="productCount" value="${selectedProducts.length}">
-    <button type="submit">Submit Order</button>
+    <button type="submit">Continue</button>
   </form>
 
-  <div id="responseMsg"></div>
-
   <script>
-    document.getElementById('orderForm').addEventListener('submit', async function(event) {
-      event.preventDefault();
-      const formData = new FormData(this);
-      const response = await fetch('${ScriptApp.getService().getUrl()}', {
-        method: 'POST',
-        body: formData
+    const categories = {
+      Tops: ["Match T-Shirt", "Match Shirt (Long Sleeve)", "Training T-Shirt", "Polo Shirt", "Leisure T-Shirt", "Crew Neck Training Sweatshirt", "1/4 Zip Sweatshirt", "Full Zip Tracksuit Top", "Zipped Hoodie"],
+      Bottoms: ["Match Shorts", "Training Shorts", "Leisure Shorts", "Track Pants"],
+      Accessories: ["Training Glove", "Training Socks", "Match Socks", "Player Towel", "Club Backpack"]
+    };
+    const oneSizeItems = ["Player Towel", "Club Backpack"];
+
+    const productSelection = document.getElementById('productSelection');
+    for (const [category, products] of Object.entries(categories)) {
+      const section = document.createElement('div');
+      section.innerHTML = `<h3>${category}</h3>`;
+      const table = document.createElement('table');
+
+      products.forEach(product => {
+        const tr = document.createElement('tr');
+        if (oneSizeItems.includes(product)) {
+          tr.innerHTML = `
+            <td colspan="2">
+              <label>
+                <input type="checkbox" name="products" value="${product}">
+                ${product} (One Size)
+              </label>
+            </td>
+          `;
+        } else {
+          tr.innerHTML = `
+            <td>
+              <label>
+                <input type="checkbox" name="products" value="Junior ${product}">
+                ${product} (Junior)
+              </label>
+            </td>
+            <td>
+              <label>
+                <input type="checkbox" name="products" value="Adult ${product}">
+                ${product} (Adult)
+              </label>
+            </td>
+          `;
+        }
+        table.appendChild(tr);
       });
-      const result = await response.text();
-      document.getElementById('responseMsg').innerText = result;
-      this.style.display = 'none';
+
+      section.appendChild(table);
+      productSelection.appendChild(section);
+    }
+
+    document.getElementById('initialForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      const phone = formData.get('phone');
+      const regex = /^(?:\+44\s?7\d{3}|\(?07\d{3}\)?)\s?\d{3}\s?\d{3}$/;
+      const phoneError = document.getElementById("phoneError");
+
+      if (!regex.test(phone)) {
+        phoneError.style.display = "block";
+        return;
+      } else {
+        phoneError.style.display = "none";
+      }
+
+      const name = encodeURIComponent(formData.get('clubName'));
+      const email = encodeURIComponent(formData.get('email'));
+      const phoneEncoded = encodeURIComponent(phone);
+      const selected = formData.getAll('products');
+
+      if (selected.length === 0) {
+        alert("Please select at least one product.");
+        return;
+      }
+
+      const products = selected.map(p => encodeURIComponent(p)).join(',');
+      const redirectUrl = `./sizes.html?name=${name}&email=${email}&phone=${phoneEncoded}&products=${products}`;
+      window.location.href = redirectUrl;
     });
   </script>
-  `;
-
-  return HtmlService.createHtmlOutput(html)
-    .setTitle("Select Sizes & Quantities")
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
-}
-
-function doPost(e) {
-  const formData = e.parameter;
-  const customerName = formData.name;
-  const productCount = parseInt(formData.productCount, 10);
-
-  let summary = `Order from ${customerName}:\n\n`;
-
-  for (let i = 0; i < productCount; i++) {
-    const product = formData[`product_${i}`];
-    const size = formData[`size_${i}`];
-    const qty = formData[`qty_${i}`];
-
-    summary += `• ${product} — Size: ${size}, Qty: ${qty}\n`;
-  }
-
-  // ✅ Example: send to yourself or log it
-  MailApp.sendEmail("akhtarhasan2005@gmail.com", "New Kit Order", summary);
-  Logger.log(summary);
-
-  return ContentService.createTextOutput("✅ Order submitted successfully!");
-}
+</body>
+</html>
