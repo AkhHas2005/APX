@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>APX Order Cost Calculator</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>APX Order Cost Calculator</h1>
+
+  <section id="controls">
+    <label for="tier">Select Pricing Tier:</label>
+    <select id="tier">
+      <option value="C">C</option>
+      <option value="B">B</option>
+      <option value="A">A</option>
+      <option value="A+">A+</option>
+    </select>
+
+    <label for="discount">Discount (%):</label>
+    <input type="number" id="discount" value="0" />
+
+    <button id="loadData">Load Product Data</button>
+  </section>
+
+  <section id="productList"></section>
+
+  <section id="summary">
+    <h2>Order Summary</h2>
+    <div id="results"></div>
+  </section>
+
+  <script src="script.js"></script>
+</body>
+</html>
