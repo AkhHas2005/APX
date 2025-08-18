@@ -56,6 +56,8 @@
     <button type="submit" style="background: #007cba; color: white; padding: 12px 24px; border: none; border-radius: 5px; font-size: 16px; cursor: pointer;">Continue</button>
   </form>
 
+    <!-- Replace the JavaScript section (around lines 80-180) -->
+  
   <script>
     const productRanges = {
       "PLAYING RANGE": {
@@ -112,10 +114,10 @@
           { name: "Snood", custom: false },
           { name: "Bobble Hat", custom: false }
         ],
-        hasAgeGroups: false // These are one-size items
+        hasAgeGroups: false
       }
     };
-
+  
     const productSelection = document.getElementById('productSelection');
     
     for (const [rangeName, rangeData] of Object.entries(productRanges)) {
@@ -129,39 +131,49 @@
         <button type="button" class="select-all-btn" onclick="selectAllInRange('${rangeName}')">Select All</button>
       `;
       section.appendChild(header);
-
+  
       if (rangeData.hasAgeGroups) {
         const grid = document.createElement('div');
         grid.className = 'products-grid';
         
-        // Adult column
+        // Adult column with its own select all
         const adultDiv = document.createElement('div');
         adultDiv.className = 'age-group';
-        adultDiv.innerHTML = '<h4>ADULT</h4>';
+        adultDiv.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin: 0 0 10px 0; padding: 8px; background: #f5f5f5; border-radius: 3px;">
+            <h4 style="margin: 0;">ADULT</h4>
+            <button type="button" class="select-all-btn" style="font-size: 10px; padding: 3px 6px;" onclick="selectAllInAgeGroup('${rangeName}', 'Adult')">Select All</button>
+          </div>
+        `;
         
         rangeData.products.forEach(product => {
           const div = document.createElement('div');
           div.className = 'product-item';
           div.innerHTML = `
             <label>
-              <input type="checkbox" name="products" value="Adult ${product.name}" data-range="${rangeName}">
+              <input type="checkbox" name="products" value="Adult ${product.name}" data-range="${rangeName}" data-age="Adult">
               ${product.name} ${product.custom ? '<span class="custom-tag">Custom</span>' : ''}
             </label>
           `;
           adultDiv.appendChild(div);
         });
         
-        // Junior column
+        // Junior column with its own select all
         const juniorDiv = document.createElement('div');
         juniorDiv.className = 'age-group';
-        juniorDiv.innerHTML = '<h4>JUNIOR</h4>';
+        juniorDiv.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin: 0 0 10px 0; padding: 8px; background: #f5f5f5; border-radius: 3px;">
+            <h4 style="margin: 0;">JUNIOR</h4>
+            <button type="button" class="select-all-btn" style="font-size: 10px; padding: 3px 6px;" onclick="selectAllInAgeGroup('${rangeName}', 'Junior')">Select All</button>
+          </div>
+        `;
         
         rangeData.products.forEach(product => {
           const div = document.createElement('div');
           div.className = 'product-item';
           div.innerHTML = `
             <label>
-              <input type="checkbox" name="products" value="Junior ${product.name}" data-range="${rangeName}">
+              <input type="checkbox" name="products" value="Junior ${product.name}" data-range="${rangeName}" data-age="Junior">
               ${product.name} ${product.custom ? '<span class="custom-tag">Custom</span>' : ''}
             </label>
           `;
@@ -197,8 +209,8 @@
       
       productSelection.appendChild(section);
     }
-
-    // Select all function
+  
+    // Select all in range function
     function selectAllInRange(rangeName) {
       const checkboxes = document.querySelectorAll(`input[data-range="${rangeName}"]`);
       const allChecked = Array.from(checkboxes).every(cb => cb.checked);
@@ -207,32 +219,45 @@
         checkbox.checked = !allChecked;
       });
     }
-
+  
+    // Select all in age group function
+    function selectAllInAgeGroup(rangeName, ageGroup) {
+      const checkboxes = document.querySelectorAll(`input[data-range="${rangeName}"][data-age="${ageGroup}"]`);
+      const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+      
+      checkboxes.forEach(checkbox => {
+        checkbox.checked = !allChecked;
+      });
+    }
+      
     document.getElementById('initialForm').addEventListener('submit', function(e) {
       e.preventDefault();
       const formData = new FormData(this);
       const phone = formData.get('phone');
       const regex = /^(?:\+44\s?7\d{3}|\(?07\d{3}\)?)\s?\d{3}\s?\d{3}$/;
       const phoneError = document.getElementById("phoneError");
-
+    
       if (!regex.test(phone)) {
         phoneError.style.display = "block";
         return;
       } else {
         phoneError.style.display = "none";
       }
-
+    
       const name = encodeURIComponent(formData.get('clubName'));
       const email = encodeURIComponent(formData.get('email'));
       const phoneEncoded = encodeURIComponent(phone);
       const salesManager = encodeURIComponent(formData.get('salesManager'));
       const selected = formData.getAll('products');
-
+    
       if (selected.length === 0) {
         alert("Please select at least one product.");
         return;
       }
-
+    
+      // Log the selected products for debugging
+      console.log("Selected products:", selected);
+    
       const products = selected.map(p => encodeURIComponent(p)).join(',');
       const redirectUrl = `./sizes.html?name=${name}&email=${email}&phone=${phoneEncoded}&salesManager=${salesManager}&products=${products}`;
       window.location.href = redirectUrl;

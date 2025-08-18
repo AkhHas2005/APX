@@ -10,20 +10,94 @@ function normalizeProductName(name) {
 }
 
 async function parseCsv(url) {
-  const res = await fetch(url);
-  const text = await res.text();
-  const rows = text.trim().split('\n').map(row => row.split(','));
-  const map = {};
-  for (let i = 1; i < rows.length; i++) {
-    const [name, imageUrl, sizesRaw] = rows[i];
-    if (name) {
-      map[name.trim()] = {
-        image: imageUrl,
-        sizes: (sizesRaw || '').split(',').map(s => s.trim()).filter(s => s)
-      };
+  try {
+    const res = await fetch(url);
+    const text = await res.text();
+    console.log("CSV text received:", text.substring(0, 500) + "...");
+    
+    const rows = text.trim().split('\n').map(row => {
+      // Handle CSV with proper comma parsing (account for quotes)
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let i = 0; i < row.length; i++) {
+        const char = row[i];
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      result.push(current.trim());
+      return result;
+    });
+    
+    console.log("Parsed rows sample:", rows.slice(0, 5));
+    
+    const map = {};
+    for (let i = 1; i < rows.length; i++) {
+      const [name, imageUrl] = rows[i];
+      if (name && name.trim()) {
+        const cleanName = name.trim().replace(/"/g, '');
+        const cleanImageUrl = imageUrl ? imageUrl.trim().replace(/"/g, '') : '';
+        
+        // Automatically determine sizes based on product name
+        const sizes = determineSizes(cleanName);
+        
+        map[cleanName] = {
+          image: cleanImageUrl,
+          sizes: sizes
+        };
+        
+        console.log(`Mapped "${cleanName}":`, map[cleanName]);
+      }
     }
+    
+    console.log("Final productData map:", map);
+    return map;
+  } catch (error) {
+    console.error("Error parsing CSV:", error);
+    return {};
   }
-  return map;
+}
+
+// Add this new function to determine sizes automatically
+function determineSizes(productName) {
+  const lowerName = productName.toLowerCase();
+  
+  // Check if it's a junior item
+  const isJunior = lowerName.includes('junior') || lowerName.includes('(junior)');
+  
+  // Check if it's socks
+  const isSocks = lowerName.includes('socks');
+  
+  // Check if it's training gloves (which should be one size)
+  const isGloves = lowerName.includes('gloves') || lowerName.includes('glove');
+  
+  // Check if it's accessories (one size items)
+  const oneTimeItems = [
+    'towel', 'backpack', 'sliders', 'bucket hat', 'snood', 'bobble hat'
+  ];
+  const isOneSize = oneTimeItems.some(item => lowerName.includes(item)) || isGloves;
+  
+  if (isOneSize) {
+    return ["One Size"];
+  } else if (isSocks) {
+    if (isJunior) {
+      return ["7-12", "12-3"];
+    } else {
+      return ["4-7", "8-12"];
+    }
+  } else if (isJunior) {
+    return ["YXXS", "YXS", "YS", "YM", "YL", "XS"];
+  } else {
+    // Adult clothing items
+    return ["S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL", "6XL"];
+  }
 }
 
 function updatePersonalisation(productId, trueName, size, count) {
@@ -83,21 +157,61 @@ async function buildForm() {
 
   selectedProducts.forEach((original, i) => {
     const trueName = normalizeProductName(original);
-    const data = productData[trueName] || { sizes: ["One Size"], image: "" };
-    const sizes = data.sizes.length ? data.sizes : ["One Size"];
+    
+    console.log(`\n=== Processing Product ${i}: ${original} -> ${trueName} ===`);
+    
+    // Try to find club-specific version first
+    let data = null;
+    let displayImage = "";
+    let sizes = [];
+    
+    // Check if we have club-specific data
+    const clubData = productData[`${name} ${trueName}`];
+    const defaultData = productData[trueName];
+    
+    console.log(`Club data for "${name} ${trueName}":`, clubData);
+    console.log(`Default data for "${trueName}":`, defaultData);
+    
+    if (clubData) {
+      // Use club-specific data
+      data = clubData;
+      displayImage = clubData.image || "";
+      sizes = clubData.sizes || determineSizes(trueName);
+      console.log(`Using club-specific data with sizes:`, sizes);
+    } else if (defaultData) {
+      // Use default data
+      data = defaultData;
+      displayImage = defaultData.image || "";
+      sizes = defaultData.sizes || determineSizes(trueName);
+      console.log(`Using default data with sizes:`, sizes);
+    } else {
+      // Fallback - create data with automatic size determination
+      sizes = determineSizes(trueName);
+      displayImage = "";
+      console.log(`No data found, using automatic sizes:`, sizes);
+    }
+    
+    // Ensure we have valid sizes
+    if (!sizes || sizes.length === 0) {
+      sizes = determineSizes(trueName);
+      console.log(`Fallback to automatic size determination:`, sizes);
+    }
+    
     const productId = `product_${i}`;
+    const baseName = trueName.replace(/ \(Junior\)| \(Adult\)/, "");
+
+    console.log(`Final result for ${trueName}:`, { sizes, displayImage });
 
     form.innerHTML += `<h3 style="margin-top:30px;">${trueName}</h3>
       <input type="hidden" name="${productId}_name" value="${trueName}">
       <table><thead><tr>
-        <th>${data.image ? `<img src="${data.image}">` : ""}</th>
-        ${sizes.map(size => `<th>${size}</th>`).join('')}
+        <th style="width: 200px;">${displayImage ? `<img src="${displayImage}">` : ""}</th>
+        ${sizes.map(size => `<th style="width: 80px; min-width: 60px;">${size}</th>`).join('')}
       </tr></thead><tbody><tr><td>Qty</td>
-        ${sizes.map(size => `<td><input type="number" name="${productId}_${size}" min="0" value="0"
+        ${sizes.map(size => `<td><input type="number" name="${productId}_${size}" min="0" value="0" style="width: 60px;"
           oninput="updatePersonalisation('${productId}', '${trueName}', '${size}', this.value)"></td>`).join('')}
       </tr></tbody></table>`;
 
-    const baseName = trueName.split(' (')[0]; // Get the base name without Junior/Adult tag
     if (personalisedItems.nameAndNumber.includes(baseName)) {
       form.innerHTML += `
         <h4>Personalisation for ${trueName}</h4>
