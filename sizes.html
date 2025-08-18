@@ -16,15 +16,22 @@
         border-collapse: collapse;
         width: 100%;
         margin-bottom: 20px;
+        table-layout: fixed; /* Forces fixed column widths */
       }
       th,
       td {
         border: 1px solid #ccc;
         padding: 8px;
         text-align: center;
+        overflow: hidden; /* Prevents content overflow */
       }
       img {
         max-width: 150px;
+      }
+      /* Responsive table wrapper */
+      .table-wrapper {
+        overflow-x: auto;
+        margin-bottom: 20px;
       }
     </style>
     <script src="main.js"></script>
@@ -65,6 +72,7 @@
         const text = await res.text();
         const lines = text.trim().split('\n');
         const map = {};
+        const clubProductMap = {}; // New map for club-specific products
         
         for (let i = 1; i < lines.length; i++) {
           const line = lines[i].trim();
@@ -108,15 +116,27 @@
               sizes = ["One Size"];
             }
             
-            map[cleanName] = {
+            const productData = {
               image: imageUrl ? imageUrl.trim() : "",
               sizes: sizes
             };
+            
+            map[cleanName] = productData;
+            
+            // Check if this is a club-specific product (contains club name)
+            const clubMatch = cleanName.match(/^(.+?)\s+(Match|Training|Polo|Leisure|Crew|1\/4|Full|Zipped|Goalkeeper|WARRIOR|CENTURION|TITAN|ELITE|Draw|Sublimated)/);
+            if (clubMatch) {
+              const clubName = clubMatch[1];
+              const productPart = cleanName.replace(clubName + ' ', '');
+              if (!clubProductMap[clubName]) clubProductMap[clubName] = {};
+              clubProductMap[clubName][productPart] = productData;
+            }
           }
         }
         
         console.log("Parsed product data:", map); // Debug log
-        return map;
+        console.log("Club product data:", clubProductMap); // Debug log
+        return { map, clubProductMap };
       };
 
       const buildForm = async () => {
@@ -134,7 +154,7 @@
         document.getElementById(
           "formHeading"
         ).innerText = `Select Sizes & Quantities for ${name}`;
-        const productData = await parseCsv(csvUrl);
+        const { map: productData, clubProductMap } = await parseCsv(csvUrl);
         const form = document.getElementById("sizeForm");
 
         form.innerHTML += `<input type="hidden" name="name" value="${name}">
@@ -145,10 +165,24 @@
 
         selectedProducts.forEach((original, i) => {
           const trueName = normalizeProductName(original);
-          const data = productData[trueName] || {
-            sizes: ["One Size"],
-            image: "",
-          };
+          
+          // Try to find club-specific version first
+          let data = null;
+          let displayImage = "";
+          
+          if (clubProductMap[name] && clubProductMap[name][trueName]) {
+            data = clubProductMap[name][trueName];
+            displayImage = data.image;
+            console.log(`Found club-specific image for ${name} ${trueName}`);
+          } else {
+            // Fall back to default product data
+            data = productData[trueName] || {
+              sizes: ["One Size"],
+              image: "",
+            };
+            displayImage = data.image;
+          }
+          
           const sizes = data.sizes.length ? data.sizes : ["One Size"];
           const productId = `product_${i}`;
           const baseName = trueName.replace(/ \(Junior\)| \(Adult\)/, "");
@@ -158,15 +192,15 @@
           form.innerHTML += `<h3 style="margin-top:30px;">${trueName}</h3>
           <input type="hidden" name="${productId}_name" value="${trueName}">
           <table><thead><tr>
-            <th>${data.image ? `<img src="${data.image}">` : ""}</th>
-            ${sizes.map((size) => `<th>${size}</th>`).join("")}
+            <th style="width: 200px;">${displayImage ? `<img src="${displayImage}">` : ""}</th>
+            ${sizes.map((size) => `<th style="width: 80px; min-width: 60px;">${size}</th>`).join("")}
           </tr></thead><tbody><tr><td>Qty</td>
             ${sizes
               .map(
                 (
                   size
-                ) => `<td><input type="number" name="${productId}_${size}" min="0" value="0"
-               oninput="updatePersonalisation('${productId}', '${trueName}', '${size}', this.value)"></td>`
+                ) => `<td><input type="number" name="${productId}_${size}" min="0" value="0" style="width: 60px;"
+         oninput="updatePersonalisation('${productId}', '${trueName}', '${size}', this.value)"></td>`
               )
               .join("")}
           </tr></tbody></table>`;
@@ -190,7 +224,7 @@
         <textarea name="deliveryAddress" rows="4" cols="50" required placeholder="Enter full delivery address"></textarea>
         <br><br>
         <button type="submit">Submit Final Order</button>`;
-
+  
         form.onsubmit = async function (e) {
           e.preventDefault();
           const formData = new FormData(form);
