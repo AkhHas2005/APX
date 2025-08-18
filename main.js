@@ -11,28 +11,39 @@ function waitForGapi() {
   });
 }
 
-async function initializeAPIs() {
-  await waitForGapi();
-  gapi.load("client:auth2", async () => {
-    try {
-      await gapi.client.init({
-        clientId: "268508341021-3caat1nd0auvg2l8tr5rbdhs2mpsp67p.apps.googleusercontent.com",
-        scope: "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/gmail.send"
-      });
+let accessToken = null;
 
-      await gapi.client.load("gmail", "v1");
-      await gapi.client.load("sheets", "v4");
-      await gapi.client.load("drive", "v3");
+function initializeAPIs() {
+  return new Promise((resolve, reject) => {
+    gapi.load("client", async () => {
+      try {
+        await gapi.client.init({
+          // No clientId here — GIS handles auth
+          // Just load discovery docs
+        });
 
-      const authInstance = gapi.auth2.getAuthInstance();
-      if (!authInstance.isSignedIn.get()) {
-        await authInstance.signIn();
+        await gapi.client.load("gmail", "v1");
+        await gapi.client.load("sheets", "v4");
+        await gapi.client.load("drive", "v3");
+
+        // Use GIS to get access token
+        const tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: "268508341021-3caat1nd0auvg2l8tr5rbdhs2mpsp67p.apps.googleusercontent.com",
+          scope: "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/gmail.send",
+          callback: (tokenResponse) => {
+            accessToken = tokenResponse.access_token;
+            gapi.client.setToken({ access_token });
+            console.log("✅ GIS token received");
+            resolve();
+          }
+        });
+
+        tokenClient.requestAccessToken();
+      } catch (err) {
+        console.error("❌ API initialization failed:", err);
+        reject(err);
       }
-
-      console.log("✅ All APIs authenticated successfully");
-    } catch (err) {
-      console.error("❌ API initialization failed:", err.message || err);
-    }
+    });
   });
 }
 
