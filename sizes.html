@@ -166,56 +166,62 @@
         selectedProducts.forEach((original, i) => {
           const trueName = normalizeProductName(original);
           
-          // Try to find club-specific version first, then fall back to default
+          console.log(`\n=== Processing Product ${i}: ${original} -> ${trueName} ===`);
+          
+          // First, always check what's available in default product data
+          const defaultData = productData[trueName];
+          console.log(`Default data for "${trueName}":`, defaultData);
+          
+          // Try to find club-specific version
           let data = null;
           let displayImage = "";
+          let sizes = [];
           
           if (clubProductMap[name] && clubProductMap[name][trueName]) {
             data = clubProductMap[name][trueName];
-            // Only use club-specific image if it's not empty
-            if (data.image && data.image.trim() !== "") {
-              displayImage = data.image;
-              console.log(`Found club-specific image for ${name} ${trueName}`);
-            } else {
-              // Fall back to default product image if club-specific image is empty
-              const defaultData = productData[trueName];
-              displayImage = defaultData ? defaultData.image : "";
-              console.log(`Using default image for ${name} ${trueName} (club image empty)`);
-            }
-          } else {
-            // Fall back to default product data
-            data = productData[trueName];
-            if (!data) {
-              console.log(`No data found for ${trueName}, using default`);
-              data = {
-                sizes: ["One Size"],
-                image: "",
-              };
-            }
-            displayImage = data.image;
-            console.log(`Using default data for ${trueName}:`, data);
-          }
-          
-          // Ensure we have valid sizes - always fall back to default product sizes if available
-          let sizes = [];
-          if (data && data.sizes && data.sizes.length > 0) {
-            sizes = data.sizes;
-          } else {
-            // Try to get sizes from default product data
-            const defaultData = productData[trueName];
-            if (defaultData && defaultData.sizes && defaultData.sizes.length > 0) {
+            console.log(`Found club-specific data for ${name} ${trueName}:`, data);
+            
+            // Use club-specific sizes if available and not empty
+            if (data.sizes && data.sizes.length > 0) {
+              sizes = data.sizes;
+              console.log(`Using club-specific sizes:`, sizes);
+            } else if (defaultData && defaultData.sizes && defaultData.sizes.length > 0) {
               sizes = defaultData.sizes;
-              console.log(`Using default sizes for ${trueName}:`, sizes);
+              console.log(`Club data has no sizes, using default sizes:`, sizes);
             } else {
               sizes = ["One Size"];
-              console.log(`No sizes found for ${trueName}, using One Size`);
+              console.log(`No sizes found anywhere, using One Size`);
+            }
+            
+            // Handle image
+            if (data.image && data.image.trim() !== "") {
+              displayImage = data.image;
+              console.log(`Using club-specific image`);
+            } else if (defaultData && defaultData.image) {
+              displayImage = defaultData.image;
+              console.log(`Using default image (club image empty)`);
+            }
+          } else {
+            // No club-specific data, use default
+            console.log(`No club-specific data found, using default for ${trueName}`);
+            data = defaultData;
+            
+            if (data) {
+              sizes = data.sizes && data.sizes.length > 0 ? data.sizes : ["One Size"];
+              displayImage = data.image || "";
+              console.log(`Using default data:`, { sizes, image: displayImage });
+            } else {
+              console.log(`No default data found for ${trueName}!`);
+              sizes = ["One Size"];
+              displayImage = "";
             }
           }
           
           const productId = `product_${i}`;
           const baseName = trueName.replace(/ \(Junior\)| \(Adult\)/, "");
 
-          console.log(`Product ${i}: ${trueName}`, { data, sizes, displayImage }); // Enhanced debug log
+          console.log(`Final result for ${trueName}:`, { sizes, displayImage });
+          console.log(`========================\n`);
 
           form.innerHTML += `<h3 style="margin-top:30px;">${trueName}</h3>
           <input type="hidden" name="${productId}_name" value="${trueName}">
@@ -228,7 +234,7 @@
                 (
                   size
                 ) => `<td><input type="number" name="${productId}_${size}" min="0" value="0" style="width: 60px;"
-         oninput="updatePersonalisation('${productId}', '${trueName}', '${size}', this.value)"></td>`
+   oninput="updatePersonalisation('${productId}', '${trueName}', '${size}', this.value)"></td>`
               )
               .join("")}
           </tr></tbody></table>`;
@@ -329,21 +335,20 @@
         return new Promise((resolve, reject) => {
           gapi.load("client:auth2", async () => {
             try {
-              // Initialize with correct client ID and API endpoints
+              // Initialize with the correct client ID (APX Web App 2)
               await gapi.client.init({
-                apiKey: 'AIzaSyBqJ8xJDQyDnXjYyVRHpbrxlHOTEtE4rEk', // Add API key if needed
-                clientId: "268508341021-6m1q5ugf8os2ufte5cfpoqaegec86654.apps.googleusercontent.com",
+                clientId: "268508341021-3caat1nd0auvg2l8tr5rbdhs2mpsp67p.apps.googleusercontent.com",
                 scope: [
                   "https://www.googleapis.com/auth/drive.file",
                   "https://www.googleapis.com/auth/spreadsheets", 
                   "https://www.googleapis.com/auth/gmail.send"
-                ].join(" "),
-                discoveryDocs: [
-                  "https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest",
-                  "https://www.googleapis.com/discovery/v1/apis/sheets/v4/rest",
-                  "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"
-                ]
+                ].join(" ")
               });
+              
+              // Load discovery docs separately to avoid API key issues
+              await gapi.client.load('gmail', 'v1');
+              await gapi.client.load('sheets', 'v4');
+              await gapi.client.load('drive', 'v3');
               
               // Sign in the user
               const authInstance = gapi.auth2.getAuthInstance();
@@ -352,16 +357,7 @@
                 await authInstance.signIn();
               }
               
-              // Verify we have a valid access token
-              const user = authInstance.currentUser.get();
-              const authResponse = user.getAuthResponse();
-              
-              if (!authResponse || !authResponse.access_token) {
-                throw new Error("Failed to get access token");
-              }
-              
               console.log("✅ All APIs authenticated successfully");
-              console.log("Access token:", authResponse.access_token.substring(0, 20) + "...");
               resolve();
             } catch (error) {
               console.error("❌ API initialization failed:", error);
