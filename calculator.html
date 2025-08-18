@@ -10,7 +10,7 @@
   <h1>APX Order Cost Calculator</h1>
 
   <section id="controls">
-    <label for="tier">Select Pricing Tier:</label>
+    <label for="tier">Pricing Tier:</label>
     <select id="tier">
       <option value="C">C</option>
       <option value="B">B</option>
@@ -20,8 +20,12 @@
 
     <label for="discount">Discount (%):</label>
     <input type="number" id="discount" value="0" />
-
     <button id="loadData">Load Product Data</button>
+  </section>
+
+  <section id="search">
+    <label for="searchInput">Search Product Code:</label>
+    <input type="text" id="searchInput" placeholder="Type to filter..." />
   </section>
 
   <section id="productList"></section>
