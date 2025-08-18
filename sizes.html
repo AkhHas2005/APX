@@ -172,8 +172,16 @@
           
           if (clubProductMap[name] && clubProductMap[name][trueName]) {
             data = clubProductMap[name][trueName];
-            displayImage = data.image;
-            console.log(`Found club-specific image for ${name} ${trueName}`);
+            // Only use club-specific image if it's not empty
+            if (data.image && data.image.trim() !== "") {
+              displayImage = data.image;
+              console.log(`Found club-specific image for ${name} ${trueName}`);
+            } else {
+              // Fall back to default product image if club-specific image is empty
+              const defaultData = productData[trueName];
+              displayImage = defaultData ? defaultData.image : "";
+              console.log(`Using default image for ${name} ${trueName} (club image empty)`);
+            }
           } else {
             // Fall back to default product data
             data = productData[trueName] || {
