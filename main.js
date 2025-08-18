@@ -1,284 +1,233 @@
 // main.js
 
-async function submitOrder(p, spreadsheetId, spreadsheetUrl) {
-  const name = p.name || "Customer";
-  const club = p.clubName || "Club";
-  const email = p.email || "akhtarhasan2005@gmail.com";
-  const phone = p.phone || "Not Provided";
-  const address = p.deliveryAddress || "Not Provided";
-  const salesManager = p.salesManager || "";
-  const productCount = parseInt(p.productCount, 10);
-
-  // Determine sales manager email
-  const jamesEmail = "pythonprogramsha@gmail.com";
-  const craigEmail = "fifautuber2016@gmail.com";
-  const managerEmail = salesManager === "James" ? jamesEmail :
-                       salesManager === "Craig" ? craigEmail :
-                       "akhtarhasan2005@gmail.com";
-
-  let orderSummary = `🛍️ Order Summary for ${name}\n\n`;
-
-  for (let i = 0; i < productCount; i++) {
-    const base = `product_${i}`;
-    const productName = p[`${base}_name`];
-    if (!productName) continue;
-
-    orderSummary += `🔹 ${productName}\n`;
-    const sizeQtyMap = {};
-
-    Object.keys(p).forEach(key => {
-      const match = key.match(new RegExp(`^${base}_(\\w+)$`));
-      if (match && !key.includes('_name_') && !key.includes('_number_') && !key.includes('_size_')) {
-        const size = match[1];
-        const qty = parseInt(p[key], 10);
-        if (qty > 0) {
-          sizeQtyMap[size] = qty;
-          orderSummary += `  • Size: ${size}, Qty: ${qty}\n`;
-        }
-      }
-    });
-
-    for (const size in sizeQtyMap) {
-      for (let r = 0; r < sizeQtyMap[size]; r++) {
-        const nameField = p[`${base}_name_${size}_${r}`];
-        const numberField = p[`${base}_number_${size}_${r}`];
-
-        const hasName = nameField && nameField.trim();
-        const hasNumber = numberField && numberField.trim();
-        if (hasName || hasNumber) {
-          orderSummary += `    ↳ Personalised ${size} [#${r + 1}]: `;
-          if (hasName) orderSummary += `Name: ${hasName} `;
-          if (hasNumber) orderSummary += `Number: ${hasNumber}`;
-          orderSummary += `\n`;
-        }
-      }
-    }
-
-    orderSummary += `\n`;
-  }
-
-  const clientSummary = orderSummary;
-  const companySummary = `Dear Sales Rep,
-
-A new kit order has been submitted via the APX Teamwear web app. Below are the client details and order contents:
-
-👤 Customer Name: ${name}
-🏘️ Club Name: ${club}
-📧 Email: ${email}
-📞 Phone: ${phone}
-📦 Delivery Address:
-${address}
-
-—
-
-${orderSummary}
-
-🔗 Google Sheets Link:
-${spreadsheetUrl}
-`;
-
-  try {
-    // Send to appropriate sales manager
-    await sendEmail(managerEmail, `New Kit Order from ${name}`, companySummary);
-    if (email.includes("@")) {
-      await sendEmail(email, `Your Kit Order Confirmation`, `Hi ${name},\n\nWe received your order:\n\n${clientSummary}\nThanks,\nAPX Performance`);
-    }
-    console.log(`✅ Emails sent successfully to ${salesManager} (${managerEmail})`);
-  } catch (emailErr) {
-    console.error("❌ Email sending failed:", emailErr);
-  }
+// === Google API Initialization ===
+function waitForGapi() {
+  return new Promise((resolve) => {
+    const check = () => {
+      if (window.gapi) resolve();
+      else setTimeout(check, 100);
+    };
+    check();
+  });
 }
 
-async function sendEmail(to, subject, body) {
-  const base64EncodedEmail = btoa(
-    `To: ${to}\r\n` +
-    `Subject: ${subject}\r\n\r\n` +
-    `${body}`
-  ).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-
-  await gapi.client.gmail.users.messages.send({
-    userId: 'me',
-    resource: {
-      raw: base64EncodedEmail
-    }
-  });
-
-  console.log("📨 Email sent to", to);
-}
-
-async function cloneTemplate(templateId, name) {
-  const accessToken = gapi.auth.getToken().access_token;
-
-  // Copy the spreadsheet
-  const copyResponse = await fetch(`https://www.googleapis.com/drive/v3/files/${templateId}/copy`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      name: `Order – ${name} – ${new Date().toLocaleDateString('en-GB')}`,
-      parents: ['1QKzgRa9MbTUEX0CFhkl8vKfSz-vAwE-E']
-    })
-  });
-  
-  const copyData = await copyResponse.json();
-  return copyData.id; // This is the new spreadsheet ID
-}
-
-async function fillSpreadsheet(spreadsheetId, p, name) {
-  const sizeColumns = {
-    "YXXS": 10, "YXS": 11, "YS": 12, "YM": 13, "YL": 14,
-    "XS": 15, "S": 16, "M": 17, "L": 18, "XL": 19,
-    "2XL": 20, "3XL": 21, "4XL": 22, "5XL": 23, "6XL": 24,
-    "12": 10, "1": 11, "2": 12, "3": 13, "4": 14, "5": 15, "6": 16,
-    "7": 17, "8": 18, "9": 19, "10": 20, "11": 21,
-    "One Size": 26
-  };
-
-  const sheetName = "Sheet1";
-  const requests = [];
-
-  // Basic header values
-  const today = new Date();
-  const orderDate = today.toLocaleDateString("en-GB");
-  const shipDate = new Date(today.getTime() + 28 * 24 * 60 * 60 * 1000).toLocaleDateString("en-GB");
-
-  requests.push({
-    updateCells: {
-      fields: "userEnteredValue",
-      rows: [
-        { values: [{ userEnteredValue: { stringValue: orderDate } }] }, // G2
-        { values: [{ userEnteredValue: { stringValue: shipDate } }] }, // G3
-        { values: [{ userEnteredValue: { stringValue: name } }] },     // E5
-        { values: [{ userEnteredValue: { stringValue: "NEW" } }] }     // L5
-      ],
-      start: { sheetId: 0, rowIndex: 1, columnIndex: 6 }
-    }
-  });
-
-  const productCount = parseInt(p.productCount, 10);
-  let rowCursor = 9;
-  const personalisationRows = [];
-  const productsToWrite = [];
-
-  // Identify products with quantities
-  for (let i = 0; i < productCount; i++) {
-    const base = `product_${i}`;
-    const productName = p[`${base}_name`];
-    if (!productName) continue;
-
-    const sizeQtyMap = {};
-    Object.keys(p).forEach(key => {
-      const match = key.match(new RegExp(`^${base}_(\\w+)$`));
-      if (match && !key.includes("_name_") && !key.includes("_number_") && !key.includes("_size_")) {
-        const size = match[1];
-        const qty = parseInt(p[key], 10);
-        if (qty > 0) sizeQtyMap[size] = qty;
-      }
-    });
-
-    if (Object.values(sizeQtyMap).some(q => q > 0)) {
-      productsToWrite.push({ index: i, name: productName, sizeQtyMap });
-    }
-  }
-
-  // Write product rows
-  productsToWrite.forEach(({ index, name: productName, sizeQtyMap }) => {
-    const base = `product_${index}`;
-    const rowUpdates = [];
-    rowUpdates.push({ userEnteredValue: { stringValue: productName } }); // First column
-
-    for (let c = 1; c <= 26; c++) {
-      let entered = "";
-      for (const [size, col] of Object.entries(sizeColumns)) {
-        if (col === c && sizeQtyMap[size]) {
-          entered = `${sizeQtyMap[size]}`;
-        }
-      }
-      rowUpdates.push({
-        userEnteredValue: { stringValue: entered }
+async function initializeAPIs() {
+  await waitForGapi();
+  gapi.load("client:auth2", async () => {
+    try {
+      await gapi.client.init({
+        clientId: "268508341021-3caat1nd0auvg2l8tr5rbdhs2mpsp67p.apps.googleusercontent.com",
+        scope: "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/gmail.send"
       });
-    }
 
-    requests.push({
-      updateCells: {
-        fields: "userEnteredValue",
-        rows: [{ values: rowUpdates }],
-        start: { sheetId: 0, rowIndex: rowCursor, columnIndex: 0 }
+      await gapi.client.load("gmail", "v1");
+      await gapi.client.load("sheets", "v4");
+      await gapi.client.load("drive", "v3");
+
+      const authInstance = gapi.auth2.getAuthInstance();
+      if (!authInstance.isSignedIn.get()) {
+        await authInstance.signIn();
       }
-    });
 
-    // Collect personalisation data
-    for (const size in sizeQtyMap) {
-      const qty = sizeQtyMap[size];
-      for (let r = 0; r < qty; r++) {
-        const nameVal = p[`${base}_name_${size}_${r}`]?.trim();
-        const numberVal = p[`${base}_number_${size}_${r}`]?.trim();
-        const hasName = !!nameVal;
-        const hasNumber = !!numberVal;
+      console.log("✅ All APIs authenticated successfully");
+    } catch (err) {
+      console.error("❌ API initialization failed:", err.message || err);
+    }
+  });
+}
 
-        if (hasName || hasNumber) {
-          personalisationRows.push({
-            garment: productName,
-            label: `${hasName ? nameVal : ""}${hasName && hasNumber ? " / " : ""}${hasNumber ? numberVal : ""}`,
-            position: "CENTER",
-            size: size
-          });
+// === Helpers ===
+const normalizeProductName = name => {
+  if (name.startsWith("Junior ")) return name.replace("Junior ", "") + " (Junior)";
+  if (name.startsWith("Adult ")) return name.replace("Adult ", "") + " (Adult)";
+  return name;
+};
+
+const parseCsv = async (url) => {
+  const res = await fetch(url);
+  const text = await res.text();
+  const lines = text.trim().split('\n');
+  const map = {};
+  const clubProductMap = {};
+
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+
+    const columns = [];
+    let current = '', inQuotes = false;
+    for (let j = 0; j < line.length; j++) {
+      const char = line[j];
+      if (char === '"') inQuotes = !inQuotes;
+      else if (char === ',' && !inQuotes) {
+        columns.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    columns.push(current.trim());
+
+    const [name, imageUrl, sizesRaw] = columns;
+    if (name && name.trim()) {
+      const cleanName = name.trim();
+      let sizes = [];
+      if (sizesRaw && sizesRaw.trim()) {
+        const cleanSizes = sizesRaw.replace(/^["']|["']$/g, '').trim();
+        if (cleanSizes) {
+          sizes = cleanSizes.split(',').map(s => s.trim()).filter(s => s);
         }
       }
-    }
+      if (sizes.length === 0) sizes = ["One Size"];
 
-    rowCursor++;
-  });
+      const productData = {
+        image: imageUrl ? imageUrl.trim() : "",
+        sizes
+      };
 
-  // Personalisation block: starting row after main items + 2
-  let pStartRow = Math.max(rowCursor + 2, 19);
-  personalisationRows.forEach(({ garment, label, position, size }, i) => {
-    requests.push({
-      updateCells: {
-        fields: "userEnteredValue",
-        rows: [{
-          values: [
-            { userEnteredValue: { stringValue: garment } },
-            {}, {}, // Skip columns B and C
-            { userEnteredValue: { stringValue: label } },
-            { userEnteredValue: { stringValue: position } },
-            {}, {}, // Skip columns F and G
-            { userEnteredValue: { stringValue: size } }
-          ]
-        }],
-        start: { sheetId: 0, rowIndex: pStartRow + i, columnIndex: 0 }
+      map[cleanName] = productData;
+
+      const clubMatch = cleanName.match(/^(.+?)\s+(Match|Training|Polo|Leisure|Crew|1\/4|Full|Zipped|Goalkeeper|WARRIOR|CENTURION|TITAN|ELITE|Draw|Sublimated)/);
+      if (clubMatch) {
+        const clubName = clubMatch[1];
+        const productPart = cleanName.replace(clubName + ' ', '');
+        if (!clubProductMap[clubName]) clubProductMap[clubName] = {};
+        clubProductMap[clubName][productPart] = productData;
       }
-    });
-  });
-
-  await gapi.client.sheets.spreadsheets.batchUpdate({
-    spreadsheetId,
-    resource: { requests }
-  });
-
-  console.log(`✅ Filled spreadsheet for ${name} with ${productsToWrite.length} products and ${personalisationRows.length} personalisations`);
-}
-
-function exportSheetAsExcel(fileId, fileName) {
-  const accessToken = gapi.auth.getToken().access_token;
-  const exportUrl = `https://docs.google.com/feeds/download/spreadsheets/Export?key=${fileId}&exportFormat=xlsx`;
-
-  fetch(exportUrl, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`
     }
-  })
-  .then(response => response.blob())
-  .then(blob => {
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${fileName}.xlsx`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-  });
+  }
+
+  return { map, clubProductMap };
+};
+
+// === Personalisation Handler ===
+function updatePersonalisation(productId, trueName, size, count) {
+  const baseName = trueName.replace(/ \(Junior\)| \(Adult\)/, "");
+  const tbody = document.getElementById(productId + "_personalisationBody");
+  if (!tbody) return;
+
+  const currentRows = Array.from(tbody.querySelectorAll(`tr[data-size="${size}"]`));
+  count = parseInt(count);
+  if (!count || count <= 0) {
+    currentRows.forEach(row => row.remove());
+    return;
+  }
+
+  const diff = count - currentRows.length;
+  if (diff > 0) {
+    for (let i = currentRows.length; i < count; i++) {
+      const tr = document.createElement("tr");
+      tr.dataset.size = size;
+
+      if (["Match T-Shirt", "Match Shirt (Long Sleeve)", "Goalkeeper Shirt (Long Sleeve)", "Training T-Shirt", "1/4 Zip Sweatshirt", "Zipped Hoodie"].includes(baseName)) {
+        tr.innerHTML += `<td><input type="text" name="${productId}_name_${size}_${i}" placeholder="Optional"></td>`;
+        tr.innerHTML += `<td><input type="text" name="${productId}_number_${size}_${i}" placeholder="Optional"></td>`;
+      } else if (["Track Pants", "Match Shorts"].includes(baseName)) {
+        tr.innerHTML += `<td><input type="text" name="${productId}_number_${size}_${i}" placeholder="Optional"></td>`;
+      }
+
+      tr.innerHTML += `<td><input type="hidden" name="${productId}_size_${size}_${i}" value="${size}">${size}</td>`;
+      tbody.appendChild(tr);
+    }
+  } else {
+    for (let i = currentRows.length - 1; i >= count; i--) {
+      currentRows[i].remove();
+    }
+  }
 }
+
+// === Form Builder ===
+async function buildForm() {
+  const csvUrl = "https://raw.githubusercontent.com/AkhHas2005/APX/main/Product%20Links%20-%20ProductData.csv";
+  const urlParams = new URLSearchParams(window.location.search);
+  const name = urlParams.get("name") || "";
+  const email = urlParams.get("email") || "";
+  const phone = urlParams.get("phone") || "";
+  const salesManager = urlParams.get("salesManager") || "";
+  const productsParam = urlParams.get("products") || "";
+  const selectedProducts = productsParam.split(",").map(p => decodeURIComponent(p.trim())).filter(p => p);
+
+  document.getElementById("formHeading").innerText = `Select Sizes & Quantities for ${name}`;
+  const { map: productData, clubProductMap } = await parseCsv(csvUrl);
+  const form = document.getElementById("sizeForm");
+
+  form.innerHTML += `<input type="hidden" name="name" value="${name}">
+                     <input type="hidden" name="email" value="${email}">
+                     <input type="hidden" name="phone" value="${phone}">
+                     <input type="hidden" name="salesManager" value="${salesManager}">
+                     <input type="hidden" name="productCount" value="${selectedProducts.length}">`;
+
+  selectedProducts.forEach((original, i) => {
+    const trueName = normalizeProductName(original);
+    const baseName = trueName.replace(/ \(Junior\)| \(Adult\)/, "");
+    const defaultData = productData[trueName];
+    let data = null;
+    let displayImage = "";
+    let sizes = [];
+
+    if (clubProductMap[name] && clubProductMap[name][trueName]) {
+      data = clubProductMap[name][trueName];
+      sizes = data.sizes.length ? data.sizes : defaultData?.sizes || ["One Size"];
+      displayImage = data.image || defaultData?.image || "";
+    } else {
+      data = defaultData;
+      sizes = data?.sizes || ["One Size"];
+      displayImage = data?.image || "";
+    }
+
+    const productId = `product_${i}`;
+    form.innerHTML += `<h3 style="margin-top:30px;">${trueName}</h3>
+      <input type="hidden" name="${productId}_name" value="${trueName}">
+      <table><thead><tr>
+        <th style="width: 200px;">${displayImage ? `<img src="${displayImage}">` : ""}</th>
+        ${sizes.map(size => `<th style="width: 80px;">${size}</th>`).join("")}
+      </tr></thead><tbody><tr><td>Qty</td>
+        ${sizes.map(size => `<td><input type="number" name="${productId}_${size}" min="0" value="0" style="width: 60px;"
+          oninput="updatePersonalisation('${productId}', '${trueName}', '${size}', this.value)"></td>`).join("")}
+      </tr></tbody></table>`;
+
+    if (["Match T-Shirt", "Match Shirt (Long Sleeve)", "Goalkeeper Shirt (Long Sleeve)", "Training T-Shirt", "1/4 Zip Sweatshirt", "Zipped Hoodie"].includes(baseName)) {
+      form.innerHTML += `
+        <h4>Personalisation for ${trueName}</h4>
+        <table><thead><tr><th>Name</th><th>Number</th><th>Size</th></tr></thead>
+        <tbody id="${productId}_personalisationBody"></tbody>
+        </table>`;
+    } else if (["Track Pants", "Match Shorts"].includes(baseName)) {
+      form.innerHTML += `
+        <h4>Personalisation for ${trueName}</h4>
+        <table><thead><tr><th>Number</th><th>Size</th></tr></thead>
+        <tbody id="${productId}_personalisationBody"></tbody>
+        </table>`;
+    }
+  });
+
+  form.innerHTML += `<h3>Delivery Address</h3>
+    <textarea name="deliveryAddress" rows="4" cols="50" required placeholder="Enter full delivery address"></textarea>
+    <br><br>
+    <button type="submit">Submit Final Order</button>`;
+
+  form.onsubmit = async function (e) {
+    e.preventDefault();
+    const formData = new FormData(form);
+    const formObject = Object.fromEntries(formData.entries());
+    const name = formObject.name;
+    const fileName = `Order – ${name}`;
+
+    try {
+      await initializeAPIs();
+      const templateId = "1XSD8U61u4loh6j-ulQGMsaJ6EiT95zDR0X4_liHXbhQ";
+      const spreadsheetId = await cloneTemplate(templateId, name);
+      await fillSpreadsheet(spreadsheetId, formObject, name);
+      const spreadsheetUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}`;
+      await submitOrder(formObject, spreadsheetId, spreadsheetUrl);
+      exportSheetAsExcel(spreadsheetId, fileName);
+      document.getElementById("responseMsg").innerText = `✅ Order submitted and emailed successfully.`;
+    } catch (err) {
+      console.error("❌ Submission failed:", err.message || err);
+      document.getElementById("responseMsg").innerText = `❌ Something went wrong. Please try again.`;
+    }
+  };
+}
+
+// === Run on page load ===
+document.addEventListener("DOMContentLoaded", buildForm);

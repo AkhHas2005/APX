@@ -1,371 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Select Sizes & Quantities</title>
-    <style>
-      body {
-        font-family: Arial;
-        margin: 20px;
-      }
-      h2,
-      h3 {
-        color: #333;
-      }
-      table {
-        border-collapse: collapse;
-        width: 100%;
-        margin-bottom: 20px;
-        table-layout: fixed; /* Forces fixed column widths */
-      }
-      th,
-      td {
-        border: 1px solid #ccc;
-        padding: 8px;
-        text-align: center;
-        overflow: hidden; /* Prevents content overflow */
-      }
-      img {
-        max-width: 150px;
-      }
-      /* Responsive table wrapper */
-      .table-wrapper {
-        overflow-x: auto;
-        margin-bottom: 20px;
-      }
-    </style>
-    <script src="main.js"></script>
-  </head>
-  <body>
-    <h2 id="formHeading">Select Sizes & Quantities</h2>
-    <form id="sizeForm"></form>
-    <div id="responseMsg" style="margin-top: 20px; font-weight: bold"></div>
+<head>
+  <meta charset="UTF-8" />
+  <title>Select Sizes & Quantities</title>
+  <style>
+    body {
+      font-family: Arial;
+      margin: 20px;
+    }
+    h2, h3 {
+      color: #333;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-bottom: 20px;
+      table-layout: fixed;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+      overflow: hidden;
+    }
+    img {
+      max-width: 150px;
+    }
+    .table-wrapper {
+      overflow-x: auto;
+      margin-bottom: 20px;
+    }
+  </style>
 
-    <script>
-      const csvUrl =
-        "https://raw.githubusercontent.com/AkhHas2005/APX/main/Product%20Links%20-%20ProductData.csv";
+  <!-- Load Google API client -->
+  <script src="https://apis.google.com/js/api.js"></script>
 
-      // Define personalisation categories
-      const personalisedItems = {
-        nameAndNumber: [
-          "Match T-Shirt", "Match Shirt (Long Sleeve)",
-          "Goalkeeper Shirt (Long Sleeve)", "Training T-Shirt",
-          "1/4 Zip Sweatshirt", "Zipped Hoodie"
-        ],
-        numberOnly: [
-          "Track Pants", "Match Shorts"
-        ]
-      };
-
-      // Helpers
-      const normalizeProductName = (name) => {
-        if (name.startsWith("Junior "))
-          return name.replace("Junior ", "") + " (Junior)";
-        if (name.startsWith("Adult "))
-          return name.replace("Adult ", "") + " (Adult)";
-        return name;
-      };
-
-      // Improved CSV parser to handle quoted values properly
-      const parseCsv = async (url) => {
-        const res = await fetch(url);
-        const text = await res.text();
-        const lines = text.trim().split('\n');
-        const map = {};
-        const clubProductMap = {}; // New map for club-specific products
-        
-        for (let i = 1; i < lines.length; i++) {
-          const line = lines[i].trim();
-          if (!line) continue;
-          
-          // Parse CSV line with proper quote handling
-          const columns = [];
-          let current = '';
-          let inQuotes = false;
-          
-          for (let j = 0; j < line.length; j++) {
-            const char = line[j];
-            
-            if (char === '"') {
-              inQuotes = !inQuotes;
-            } else if (char === ',' && !inQuotes) {
-              columns.push(current.trim());
-              current = '';
-            } else {
-              current += char;
-            }
-          }
-          columns.push(current.trim()); // Add the last column
-          
-          const [name, imageUrl, sizesRaw] = columns;
-          
-          if (name && name.trim()) {
-            const cleanName = name.trim();
-            let sizes = [];
-            
-            if (sizesRaw && sizesRaw.trim()) {
-              // Remove any remaining quotes and split properly
-              const cleanSizes = sizesRaw.replace(/^["']|["']$/g, '').trim();
-              if (cleanSizes) {
-                sizes = cleanSizes.split(',').map(s => s.trim()).filter(s => s);
-              }
-            }
-            
-            // If no sizes found, default to "One Size"
-            if (sizes.length === 0) {
-              sizes = ["One Size"];
-            }
-            
-            const productData = {
-              image: imageUrl ? imageUrl.trim() : "",
-              sizes: sizes
-            };
-            
-            map[cleanName] = productData;
-            
-            // Check if this is a club-specific product (contains club name)
-            const clubMatch = cleanName.match(/^(.+?)\s+(Match|Training|Polo|Leisure|Crew|1\/4|Full|Zipped|Goalkeeper|WARRIOR|CENTURION|TITAN|ELITE|Draw|Sublimated)/);
-            if (clubMatch) {
-              const clubName = clubMatch[1];
-              const productPart = cleanName.replace(clubName + ' ', '');
-              if (!clubProductMap[clubName]) clubProductMap[clubName] = {};
-              clubProductMap[clubName][productPart] = productData;
-            }
-          }
-        }
-        
-        console.log("Parsed product data:", map); // Debug log
-        console.log("Club product data:", clubProductMap); // Debug log
-        return { map, clubProductMap };
-      };
-
-      const buildForm = async () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const name = urlParams.get("name") || "";
-        const email = urlParams.get("email") || "";
-        const phone = urlParams.get("phone") || "";
-        const salesManager = urlParams.get("salesManager") || "";
-        const productsParam = urlParams.get("products") || "";
-        const selectedProducts = productsParam
-          .split(",")
-          .map((p) => decodeURIComponent(p.trim()))
-          .filter((p) => p);
-
-        document.getElementById(
-          "formHeading"
-        ).innerText = `Select Sizes & Quantities for ${name}`;
-        const { map: productData, clubProductMap } = await parseCsv(csvUrl);
-        const form = document.getElementById("sizeForm");
-
-        form.innerHTML += `<input type="hidden" name="name" value="${name}">
-                         <input type="hidden" name="email" value="${email}">
-                         <input type="hidden" name="phone" value="${phone}">
-                         <input type="hidden" name="salesManager" value="${salesManager}">
-                         <input type="hidden" name="productCount" value="${selectedProducts.length}">`;
-
-        selectedProducts.forEach((original, i) => {
-          const trueName = normalizeProductName(original);
-          
-          console.log(`\n=== Processing Product ${i}: ${original} -> ${trueName} ===`);
-          
-          // First, always check what's available in default product data
-          const defaultData = productData[trueName];
-          console.log(`Default data for "${trueName}":`, defaultData);
-          
-          // Try to find club-specific version
-          let data = null;
-          let displayImage = "";
-          let sizes = [];
-          
-          if (clubProductMap[name] && clubProductMap[name][trueName]) {
-            data = clubProductMap[name][trueName];
-            console.log(`Found club-specific data for ${name} ${trueName}:`, data);
-            
-            // Use club-specific sizes if available and not empty
-            if (data.sizes && data.sizes.length > 0) {
-              sizes = data.sizes;
-              console.log(`Using club-specific sizes:`, sizes);
-            } else if (defaultData && defaultData.sizes && defaultData.sizes.length > 0) {
-              sizes = defaultData.sizes;
-              console.log(`Club data has no sizes, using default sizes:`, sizes);
-            } else {
-              sizes = ["One Size"];
-              console.log(`No sizes found anywhere, using One Size`);
-            }
-            
-            // Handle image
-            if (data.image && data.image.trim() !== "") {
-              displayImage = data.image;
-              console.log(`Using club-specific image`);
-            } else if (defaultData && defaultData.image) {
-              displayImage = defaultData.image;
-              console.log(`Using default image (club image empty)`);
-            }
-          } else {
-            // No club-specific data, use default
-            console.log(`No club-specific data found, using default for ${trueName}`);
-            data = defaultData;
-            
-            if (data) {
-              sizes = data.sizes && data.sizes.length > 0 ? data.sizes : ["One Size"];
-              displayImage = data.image || "";
-              console.log(`Using default data:`, { sizes, image: displayImage });
-            } else {
-              console.log(`No default data found for ${trueName}!`);
-              sizes = ["One Size"];
-              displayImage = "";
-            }
-          }
-          
-          const productId = `product_${i}`;
-          const baseName = trueName.replace(/ \(Junior\)| \(Adult\)/, "");
-
-          console.log(`Final result for ${trueName}:`, { sizes, displayImage });
-          console.log(`========================\n`);
-
-          form.innerHTML += `<h3 style="margin-top:30px;">${trueName}</h3>
-          <input type="hidden" name="${productId}_name" value="${trueName}">
-          <table><thead><tr>
-            <th style="width: 200px;">${displayImage ? `<img src="${displayImage}">` : ""}</th>
-            ${sizes.map((size) => `<th style="width: 80px; min-width: 60px;">${size}</th>`).join("")}
-          </tr></thead><tbody><tr><td>Qty</td>
-            ${sizes
-              .map(
-                (
-                  size
-                ) => `<td><input type="number" name="${productId}_${size}" min="0" value="0" style="width: 60px;"
-   oninput="updatePersonalisation('${productId}', '${trueName}', '${size}', this.value)"></td>`
-              )
-              .join("")}
-          </tr></tbody></table>`;
-
-          if (personalisedItems.nameAndNumber.includes(baseName)) {
-            form.innerHTML += `
-            <h4>Personalisation for ${trueName}</h4>
-            <table><thead><tr><th>Name</th><th>Number</th><th>Size</th></tr></thead>
-            <tbody id="${productId}_personalisationBody"></tbody>
-            </table>`;
-          } else if (personalisedItems.numberOnly.includes(baseName)) {
-            form.innerHTML += `
-            <h4>Personalisation for ${trueName}</h4>
-            <table><thead><tr><th>Number</th><th>Size</th></tr></thead>
-            <tbody id="${productId}_personalisationBody"></tbody>
-            </table>`;
-          }
-        });
-
-        form.innerHTML += `<h3>Delivery Address</h3>
-        <textarea name="deliveryAddress" rows="4" cols="50" required placeholder="Enter full delivery address"></textarea>
-        <br><br>
-        <button type="submit">Submit Final Order</button>`;
-  
-        form.onsubmit = async function (e) {
-          e.preventDefault();
-          const formData = new FormData(form);
-          const formObject = Object.fromEntries(formData.entries());
-          const name = formObject.name;
-          const fileName = `Order – ${name}`;
-
-          try {
-            // Initialize both APIs before proceeding
-            await initializeAPIs();
-            
-            const templateId = "1XSD8U61u4loh6j-ulQGMsaJ6EiT95zDR0X4_liHXbhQ";
-            const spreadsheetId = await cloneTemplate(templateId, name);
-            await fillSpreadsheet(spreadsheetId, formObject, name);
-            const spreadsheetUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}`;
-
-            await submitOrder(formObject, spreadsheetId, spreadsheetUrl); // ✉️ send emails
-
-            exportSheetAsExcel(spreadsheetId, fileName); // optional download
-            document.getElementById(
-              "responseMsg"
-            ).innerText = `✅ Order submitted and emailed successfully.`;
-          } catch (err) {
-            console.error("❌ Submission failed:", err);
-            document.getElementById(
-              "responseMsg"
-            ).innerText = `❌ Something went wrong. Please try again.`;
-          }
-        };
-      };
-
-      function updatePersonalisation(productId, trueName, size, count) {
-        const baseName = trueName.replace(/ \(Junior\)| \(Adult\)/, "");
-        const tbody = document.getElementById(productId + "_personalisationBody");
-        if (!tbody) return;
-        
-        const currentRows = Array.from(
-          tbody.querySelectorAll(`tr[data-size="${size}"]`)
-        );
-        count = parseInt(count);
-        if (!count || count <= 0) {
-          currentRows.forEach((row) => row.remove());
-          return;
-        }
-
-        const diff = count - currentRows.length;
-        if (diff > 0) {
-          for (let i = currentRows.length; i < count; i++) {
-            const tr = document.createElement("tr");
-            tr.dataset.size = size;
-            
-            if (personalisedItems.nameAndNumber.includes(baseName)) {
-              tr.innerHTML += `<td><input type="text" name="${productId}_name_${size}_${i}" placeholder="Optional"></td>`;
-              tr.innerHTML += `<td><input type="text" name="${productId}_number_${size}_${i}" placeholder="Optional"></td>`;
-            } else if (personalisedItems.numberOnly.includes(baseName)) {
-              tr.innerHTML += `<td><input type="text" name="${productId}_number_${size}_${i}" placeholder="Optional"></td>`;
-            }
-            
-            tr.innerHTML += `<td><input type="hidden" name="${productId}_size_${size}_${i}" value="${size}">${size}</td>`;
-            tbody.appendChild(tr);
-          }
-        } else {
-          for (let i = currentRows.length - 1; i >= count; i--) {
-            currentRows[i].remove();
-          }
-        }
-      }
-
-      buildForm();
-    </script>
-    <script src="https://apis.google.com/js/api.js"></script>
-    <script>
-      async function initializeAPIs() {
-        return new Promise((resolve, reject) => {
-          gapi.load("client:auth2", async () => {
-            try {
-              // Initialize with the correct client ID (APX Web App 2)
-              await gapi.client.init({
-                clientId: "268508341021-3caat1nd0auvg2l8tr5rbdhs2mpsp67p.apps.googleusercontent.com",
-                scope: [
-                  "https://www.googleapis.com/auth/drive.file",
-                  "https://www.googleapis.com/auth/spreadsheets", 
-                  "https://www.googleapis.com/auth/gmail.send"
-                ].join(" ")
-              });
-              
-              // Load discovery docs separately to avoid API key issues
-              await gapi.client.load('gmail', 'v1');
-              await gapi.client.load('sheets', 'v4');
-              await gapi.client.load('drive', 'v3');
-              
-              // Sign in the user
-              const authInstance = gapi.auth2.getAuthInstance();
-              if (!authInstance.isSignedIn.get()) {
-                console.log("Signing in user...");
-                await authInstance.signIn();
-              }
-              
-              console.log("✅ All APIs authenticated successfully");
-              resolve();
-            } catch (error) {
-              console.error("❌ API initialization failed:", error);
-              reject(error);
-            }
-          });
-        });
-      }
-    </script>
-  </body>
+  <!-- Load your unified logic -->
+  <script src="main.js" defer></script>
+</head>
+<body>
+  <h2 id="formHeading">Select Sizes & Quantities</h2>
+  <form id="sizeForm"></form>
+  <div id="responseMsg" style="margin-top: 20px; font-weight: bold"></div>
+</body>
 </html>
