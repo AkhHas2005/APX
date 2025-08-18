@@ -166,7 +166,7 @@
         selectedProducts.forEach((original, i) => {
           const trueName = normalizeProductName(original);
           
-          // Try to find club-specific version first
+          // Try to find club-specific version first, then fall back to default
           let data = null;
           let displayImage = "";
           
@@ -184,18 +184,38 @@
             }
           } else {
             // Fall back to default product data
-            data = productData[trueName] || {
-              sizes: ["One Size"],
-              image: "",
-            };
+            data = productData[trueName];
+            if (!data) {
+              console.log(`No data found for ${trueName}, using default`);
+              data = {
+                sizes: ["One Size"],
+                image: "",
+              };
+            }
             displayImage = data.image;
+            console.log(`Using default data for ${trueName}:`, data);
           }
           
-          const sizes = data.sizes.length ? data.sizes : ["One Size"];
+          // Ensure we have valid sizes - always fall back to default product sizes if available
+          let sizes = [];
+          if (data && data.sizes && data.sizes.length > 0) {
+            sizes = data.sizes;
+          } else {
+            // Try to get sizes from default product data
+            const defaultData = productData[trueName];
+            if (defaultData && defaultData.sizes && defaultData.sizes.length > 0) {
+              sizes = defaultData.sizes;
+              console.log(`Using default sizes for ${trueName}:`, sizes);
+            } else {
+              sizes = ["One Size"];
+              console.log(`No sizes found for ${trueName}, using One Size`);
+            }
+          }
+          
           const productId = `product_${i}`;
           const baseName = trueName.replace(/ \(Junior\)| \(Adult\)/, "");
 
-          console.log(`Product ${i}: ${trueName}`, data); // Debug log
+          console.log(`Product ${i}: ${trueName}`, { data, sizes, displayImage }); // Enhanced debug log
 
           form.innerHTML += `<h3 style="margin-top:30px;">${trueName}</h3>
           <input type="hidden" name="${productId}_name" value="${trueName}">
@@ -309,23 +329,39 @@
         return new Promise((resolve, reject) => {
           gapi.load("client:auth2", async () => {
             try {
-              // Initialize Drive and Sheets API
+              // Initialize with correct client ID and API endpoints
               await gapi.client.init({
+                apiKey: 'AIzaSyBqJ8xJDQyDnXjYyVRHpbrxlHOTEtE4rEk', // Add API key if needed
                 clientId: "268508341021-6m1q5ugf8os2ufte5cfpoqaegec86654.apps.googleusercontent.com",
-                scope: "https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/gmail.send",
+                scope: [
+                  "https://www.googleapis.com/auth/drive.file",
+                  "https://www.googleapis.com/auth/spreadsheets", 
+                  "https://www.googleapis.com/auth/gmail.send"
+                ].join(" "),
                 discoveryDocs: [
                   "https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest",
-                  "https://www.googleapis.com/discovery/v1/apis/sheets/v4/rest"
+                  "https://www.googleapis.com/discovery/v1/apis/sheets/v4/rest",
+                  "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"
                 ]
               });
               
               // Sign in the user
               const authInstance = gapi.auth2.getAuthInstance();
               if (!authInstance.isSignedIn.get()) {
+                console.log("Signing in user...");
                 await authInstance.signIn();
               }
               
+              // Verify we have a valid access token
+              const user = authInstance.currentUser.get();
+              const authResponse = user.getAuthResponse();
+              
+              if (!authResponse || !authResponse.access_token) {
+                throw new Error("Failed to get access token");
+              }
+              
               console.log("✅ All APIs authenticated successfully");
+              console.log("Access token:", authResponse.access_token.substring(0, 20) + "...");
               resolve();
             } catch (error) {
               console.error("❌ API initialization failed:", error);
