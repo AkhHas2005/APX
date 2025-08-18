@@ -240,9 +240,10 @@
           const name = formObject.name;
           const fileName = `Order – ${name}`;
 
-          authenticate(); // ensure Gmail + Sheets access
-
           try {
+            // Initialize both APIs before proceeding
+            await initializeAPIs();
+            
             const templateId = "1XSD8U61u4loh6j-ulQGMsaJ6EiT95zDR0X4_liHXbhQ";
             const spreadsheetId = await cloneTemplate(templateId, name);
             await fillSpreadsheet(spreadsheetId, formObject, name);
@@ -304,35 +305,33 @@
     </script>
     <script src="https://apis.google.com/js/api.js"></script>
     <script>
-      function authenticate() {
-        gapi.load("client:auth2", () => {
-          gapi.client
-            .init({
-              clientId:
-                "268508341021-6m1q5ugf8os2ufte5cfpoqaegec86654.apps.googleusercontent.com",
-              scope:
-                "https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/spreadsheets",
-            })
-            .then(() => {
-              gapi.auth2.getAuthInstance().signIn();
-            });
-        });
-      }
-    </script>
-    <script src="https://apis.google.com/js/api.js"></script>
-    <script>
-      function authenticateGmail() {
-        gapi.load("client:auth2", async () => {
-          await gapi.client.init({
-            clientId:
-              "268508341021-3caat1nd0auvg2l8tr5rbdhs2mpsp67p.apps.googleusercontent.com",
-            scope: "https://www.googleapis.com/auth/gmail.send",
-            discoveryDocs: [
-              "https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest",
-            ],
+      async function initializeAPIs() {
+        return new Promise((resolve, reject) => {
+          gapi.load("client:auth2", async () => {
+            try {
+              // Initialize Drive and Sheets API
+              await gapi.client.init({
+                clientId: "268508341021-6m1q5ugf8os2ufte5cfpoqaegec86654.apps.googleusercontent.com",
+                scope: "https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/gmail.send",
+                discoveryDocs: [
+                  "https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest",
+                  "https://www.googleapis.com/discovery/v1/apis/sheets/v4/rest"
+                ]
+              });
+              
+              // Sign in the user
+              const authInstance = gapi.auth2.getAuthInstance();
+              if (!authInstance.isSignedIn.get()) {
+                await authInstance.signIn();
+              }
+              
+              console.log("✅ All APIs authenticated successfully");
+              resolve();
+            } catch (error) {
+              console.error("❌ API initialization failed:", error);
+              reject(error);
+            }
           });
-          await gapi.auth2.getAuthInstance().signIn();
-          console.log("✅ Gmail API authenticated");
         });
       }
     </script>
