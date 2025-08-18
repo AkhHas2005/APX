@@ -71,6 +71,16 @@ async function buildForm() {
                      <input type="hidden" name="salesManager" value="${salesManager}">
                      <input type="hidden" name="productCount" value="${selectedProducts.length}">`;
 
+  const personalisedItems = {
+    nameAndNumber: [
+      "Home Match T-Shirt", "Home Match Shirt (Long Sleeve)", "Away Match T-Shirt", "Away Match Shirt (Long Sleeve)",
+      "Sub Training T-Shirt", "Sub Training Vest"
+    ],
+    numberOnly: [
+      "Home Match Shorts", "Away Match Shorts", "1/4 Zip Tracksuit Top", "Zipped Hoodie", "Track Pants"
+    ]
+  };
+
   selectedProducts.forEach((original, i) => {
     const trueName = normalizeProductName(original);
     const data = productData[trueName] || { sizes: ["One Size"], image: "" };
@@ -87,10 +97,17 @@ async function buildForm() {
           oninput="updatePersonalisation('${productId}', '${trueName}', '${size}', this.value)"></td>`).join('')}
       </tr></tbody></table>`;
 
-    if (/Match T-Shirt|Match Shirt|Match Shorts/.test(trueName)) {
+    const baseName = trueName.split(' (')[0]; // Get the base name without Junior/Adult tag
+    if (personalisedItems.nameAndNumber.includes(baseName)) {
       form.innerHTML += `
         <h4>Personalisation for ${trueName}</h4>
-        <table><thead><tr>${trueName.includes("Shirt") ? "<th>Name</th>" : ""}<th>Number</th><th>Size</th></tr></thead>
+        <table><thead><tr><th>Name</th><th>Number</th><th>Size</th></tr></thead>
+        <tbody id="${productId}_personalisationBody"></tbody>
+        </table>`;
+    } else if (personalisedItems.numberOnly.includes(baseName)) {
+      form.innerHTML += `
+        <h4>Personalisation for ${trueName}</h4>
+        <table><thead><tr><th>Number</th><th>Size</th></tr></thead>
         <tbody id="${productId}_personalisationBody"></tbody>
         </table>`;
     }

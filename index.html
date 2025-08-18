@@ -6,95 +6,206 @@
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
     h2, h3 { color: #333; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-    td { padding: 5px; }
+    .range-section { margin-bottom: 30px; border: 1px solid #ddd; padding: 15px; border-radius: 5px; }
+    .range-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .select-all-btn { background: #007cba; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 12px; }
+    .select-all-btn:hover { background: #005a87; }
+    .products-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .age-group h4 { margin: 0 0 10px 0; padding: 8px; background: #f5f5f5; text-align: center; border-radius: 3px; }
+    .product-item { margin-bottom: 8px; }
+    .product-item label { display: flex; align-items: center; gap: 8px; }
+    .custom-tag { background: #ff6b35; color: white; font-size: 10px; padding: 2px 6px; border-radius: 3px; }
+    .one-size-section { grid-column: 1 / -1; }
+    .one-size-section .products-grid { grid-template-columns: 1fr; }
     label { display: block; }
     #phoneError { color: red; font-weight: bold; display: none; }
     .sales-manager-note { color: red; font-size: 0.9em; margin-bottom: 10px; }
+    .form-section { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
   </style>
 </head>
 <body>
   <h2>Start Your Kit Order</h2>
   <form id="initialForm">
-    <label>Name:</label>
-    <input type="text" name="name" required><br>
+    <div class="form-section">
+      <label>Name:</label>
+      <input type="text" name="name" required><br>
 
-    <label>Email:</label>
-    <input type="email" name="email" required><br>
+      <label>Email:</label>
+      <input type="email" name="email" required><br>
 
-    <label>Sales Manager:</label>
-    <select name="salesManager" required>
-      <option value="">Choose 1</option>
-      <option value="James">James</option>
-      <option value="Craig">Craig</option>
-    </select><br>
-    <div class="sales-manager-note">
-      This is your Sales rep from APX – either James or Craig
+      <label>Sales Manager:</label>
+      <select name="salesManager" required>
+        <option value="">Choose 1</option>
+        <option value="James">James</option>
+        <option value="Craig">Craig</option>
+      </select><br>
+      <div class="sales-manager-note">
+        This is your Sales rep from APX – either James or Craig
+      </div>
+
+      <label>Phone Number:</label>
+      <input type="text" id="phone" name="phone" required><br>
+      <div id="phoneError">Please enter a valid phone number.</div><br>
+
+      <label>Club Name:</label>
+      <input type="text" name="clubName"><br>
     </div>
 
-    <label>Phone Number:</label>
-    <input type="text" id="phone" name="phone" required><br>
-    <div id="phoneError">Please enter a valid phone number.</div><br>
-
-    <label>Club Name:</label>
-    <input type="text" name="clubName"><br><br>
-
-    <!-- Product categories and inputs will be injected here -->
     <div id="productSelection"></div>
 
-    <button type="submit">Continue</button>
+    <button type="submit" style="background: #007cba; color: white; padding: 12px 24px; border: none; border-radius: 5px; font-size: 16px; cursor: pointer;">Continue</button>
   </form>
 
   <script>
-    const categories = {
-      Tops: [
-        "Match T-Shirt", "Match Shirt (Long Sleeve)", "Goalkeeper Shirt (Long Sleeve)",
-        "Training T-Shirt", "Polo Shirt", "Leisure T-Shirt",
-        "Crew Neck Training Sweatshirt", "1/4 Zip Sweatshirt", "Full Zip Tracksuit Top", "Zipped Hoodie"
-      ],
-      Bottoms: ["Match Shorts", "Training Shorts", "Leisure Shorts", "Track Pants"],
-      Accessories: ["Training Glove", "Training Socks", "Match Socks", "Player Towel", "Club Backpack"]
+    const productRanges = {
+      "PLAYING RANGE": {
+        products: [
+          { name: "Home Match T-Shirt", custom: true },
+          { name: "Home Match Shirt (Long Sleeve)", custom: true },
+          { name: "Home Goalkeeper Shirt (Long Sleeve)", custom: true },
+          { name: "Home Match Shorts", custom: true },
+          { name: "Home Match Socks", custom: false },
+          { name: "Away Match T-Shirt", custom: true },
+          { name: "Away Match Shirt (Long Sleeve)", custom: true },
+          { name: "Away Goalkeeper Shirt (Long Sleeve)", custom: true },
+          { name: "Away Match Shorts", custom: true },
+          { name: "Away Match Socks", custom: false }
+        ],
+        hasAgeGroups: true
+      },
+      "TRAINING RANGE": {
+        products: [
+          { name: "1/4 Zip Tracksuit Top", custom: true },
+          { name: "Zipped Hoodie", custom: true },
+          { name: "Hoodie", custom: false },
+          { name: "Sweatshirt", custom: false },
+          { name: "Full Zip Tracksuit Top", custom: false },
+          { name: "Polo Shirt", custom: false },
+          { name: "Track Pants", custom: true },
+          { name: "Sub Training Shorts", custom: false },
+          { name: "Leisure Shorts", custom: false },
+          { name: "Sub Training T-Shirt", custom: true },
+          { name: "Leisure T-Shirt", custom: false },
+          { name: "Sub Training Vest", custom: true }
+        ],
+        hasAgeGroups: true
+      },
+      "JACKETS": {
+        products: [
+          { name: "Hybrid Hoodie", custom: false },
+          { name: "Coach Jacket", custom: false },
+          { name: "Shower Jacket", custom: false },
+          { name: "Hybrid Jacket", custom: false },
+          { name: "Gilet", custom: false },
+          { name: "Long Bench Jacket", custom: false }
+        ],
+        hasAgeGroups: true
+      },
+      "ACCESSORIES": {
+        products: [
+          { name: "Gloves", custom: false },
+          { name: "Training Socks", custom: false },
+          { name: "Player Towel", custom: false },
+          { name: "Club Backpack", custom: false },
+          { name: "Sliders", custom: false },
+          { name: "Bucket Hat", custom: false },
+          { name: "Snood", custom: false },
+          { name: "Bobble Hat", custom: false }
+        ],
+        hasAgeGroups: false // These are one-size items
+      }
     };
-    const oneSizeItems = ["Player Towel", "Club Backpack"];
 
     const productSelection = document.getElementById('productSelection');
-    for (const [category, products] of Object.entries(categories)) {
+    
+    for (const [rangeName, rangeData] of Object.entries(productRanges)) {
       const section = document.createElement('div');
-      section.innerHTML = `<h3>${category}</h3>`;
-      const table = document.createElement('table');
+      section.className = 'range-section';
+      
+      const header = document.createElement('div');
+      header.className = 'range-header';
+      header.innerHTML = `
+        <h3>${rangeName}</h3>
+        <button type="button" class="select-all-btn" onclick="selectAllInRange('${rangeName}')">Select All</button>
+      `;
+      section.appendChild(header);
 
-      products.forEach(product => {
-        const tr = document.createElement('tr');
-        if (oneSizeItems.includes(product)) {
-          tr.innerHTML = `
-            <td colspan="2">
-              <label>
-                <input type="checkbox" name="products" value="${product}">
-                ${product} (One Size)
-              </label>
-            </td>
+      if (rangeData.hasAgeGroups) {
+        const grid = document.createElement('div');
+        grid.className = 'products-grid';
+        
+        // Adult column
+        const adultDiv = document.createElement('div');
+        adultDiv.className = 'age-group';
+        adultDiv.innerHTML = '<h4>ADULT</h4>';
+        
+        rangeData.products.forEach(product => {
+          const div = document.createElement('div');
+          div.className = 'product-item';
+          div.innerHTML = `
+            <label>
+              <input type="checkbox" name="products" value="Adult ${product.name}" data-range="${rangeName}">
+              ${product.name} ${product.custom ? '<span class="custom-tag">Custom</span>' : ''}
+            </label>
           `;
-        } else {
-          tr.innerHTML = `
-            <td>
-              <label>
-                <input type="checkbox" name="products" value="Junior ${product}">
-                ${product} (Junior)
-              </label>
-            </td>
-            <td>
-              <label>
-                <input type="checkbox" name="products" value="Adult ${product}">
-                ${product} (Adult)
-              </label>
-            </td>
+          adultDiv.appendChild(div);
+        });
+        
+        // Junior column
+        const juniorDiv = document.createElement('div');
+        juniorDiv.className = 'age-group';
+        juniorDiv.innerHTML = '<h4>JUNIOR</h4>';
+        
+        rangeData.products.forEach(product => {
+          const div = document.createElement('div');
+          div.className = 'product-item';
+          div.innerHTML = `
+            <label>
+              <input type="checkbox" name="products" value="Junior ${product.name}" data-range="${rangeName}">
+              ${product.name} ${product.custom ? '<span class="custom-tag">Custom</span>' : ''}
+            </label>
           `;
-        }
-        table.appendChild(tr);
-      });
-
-      section.appendChild(table);
+          juniorDiv.appendChild(div);
+        });
+        
+        grid.appendChild(adultDiv);
+        grid.appendChild(juniorDiv);
+        section.appendChild(grid);
+      } else {
+        // One-size items (Accessories)
+        const oneSizeDiv = document.createElement('div');
+        oneSizeDiv.className = 'one-size-section';
+        
+        const grid = document.createElement('div');
+        grid.className = 'products-grid';
+        
+        rangeData.products.forEach(product => {
+          const div = document.createElement('div');
+          div.className = 'product-item';
+          div.innerHTML = `
+            <label>
+              <input type="checkbox" name="products" value="${product.name}" data-range="${rangeName}">
+              ${product.name} (One Size) ${product.custom ? '<span class="custom-tag">Custom</span>' : ''}
+            </label>
+          `;
+          grid.appendChild(div);
+        });
+        
+        oneSizeDiv.appendChild(grid);
+        section.appendChild(oneSizeDiv);
+      }
+      
       productSelection.appendChild(section);
+    }
+
+    // Select all function
+    function selectAllInRange(rangeName) {
+      const checkboxes = document.querySelectorAll(`input[data-range="${rangeName}"]`);
+      const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+      
+      checkboxes.forEach(checkbox => {
+        checkbox.checked = !allChecked;
+      });
     }
 
     document.getElementById('initialForm').addEventListener('submit', function(e) {
