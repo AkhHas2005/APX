@@ -10,6 +10,7 @@
     td { padding: 5px; }
     label { display: block; }
     #phoneError { color: red; font-weight: bold; display: none; }
+    .sales-manager-note { color: red; font-size: 0.9em; margin-bottom: 10px; }
   </style>
 </head>
 <body>
@@ -20,6 +21,16 @@
 
     <label>Email:</label>
     <input type="email" name="email" required><br>
+
+    <label>Sales Manager:</label>
+    <select name="salesManager" required>
+      <option value="">Choose 1</option>
+      <option value="James">James</option>
+      <option value="Craig">Craig</option>
+    </select><br>
+    <div class="sales-manager-note">
+      This is your Sales rep from APX – either James or Craig
+    </div>
 
     <label>Phone Number:</label>
     <input type="text" id="phone" name="phone" required><br>
@@ -36,7 +47,11 @@
 
   <script>
     const categories = {
-      Tops: ["Match T-Shirt", "Match Shirt (Long Sleeve)", "Training T-Shirt", "Polo Shirt", "Leisure T-Shirt", "Crew Neck Training Sweatshirt", "1/4 Zip Sweatshirt", "Full Zip Tracksuit Top", "Zipped Hoodie"],
+      Tops: [
+        "Match T-Shirt", "Match Shirt (Long Sleeve)", "Goalkeeper Shirt (Long Sleeve)",
+        "Training T-Shirt", "Polo Shirt", "Leisure T-Shirt",
+        "Crew Neck Training Sweatshirt", "1/4 Zip Sweatshirt", "Full Zip Tracksuit Top", "Zipped Hoodie"
+      ],
       Bottoms: ["Match Shorts", "Training Shorts", "Leisure Shorts", "Track Pants"],
       Accessories: ["Training Glove", "Training Socks", "Match Socks", "Player Towel", "Club Backpack"]
     };
@@ -99,6 +114,7 @@
       const name = encodeURIComponent(formData.get('clubName'));
       const email = encodeURIComponent(formData.get('email'));
       const phoneEncoded = encodeURIComponent(phone);
+      const salesManager = encodeURIComponent(formData.get('salesManager'));
       const selected = formData.getAll('products');
 
       if (selected.length === 0) {
@@ -107,7 +123,7 @@
       }
 
       const products = selected.map(p => encodeURIComponent(p)).join(',');
-      const redirectUrl = `./sizes.html?name=${name}&email=${email}&phone=${phoneEncoded}&products=${products}`;
+      const redirectUrl = `./sizes.html?name=${name}&email=${email}&phone=${phoneEncoded}&salesManager=${salesManager}&products=${products}`;
       window.location.href = redirectUrl;
     });
   </script>

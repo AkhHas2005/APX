@@ -38,6 +38,18 @@
       const csvUrl =
         "https://raw.githubusercontent.com/AkhHas2005/APX/main/Product%20Links%20-%20ProductData.csv";
 
+      // Define personalisation categories
+      const personalisedItems = {
+        nameAndNumber: [
+          "Match T-Shirt", "Match Shirt (Long Sleeve)",
+          "Goalkeeper Shirt (Long Sleeve)", "Training T-Shirt",
+          "1/4 Zip Sweatshirt", "Zipped Hoodie"
+        ],
+        numberOnly: [
+          "Track Pants", "Match Shorts"
+        ]
+      };
+
       // Helpers
       const normalizeProductName = (name) => {
         if (name.startsWith("Junior "))
@@ -47,26 +59,63 @@
         return name;
       };
 
+      // Improved CSV parser to handle quoted values properly
       const parseCsv = async (url) => {
         const res = await fetch(url);
         const text = await res.text();
-        const rows = text
-          .trim()
-          .split("\n")
-          .map((row) => row.split(","));
+        const lines = text.trim().split('\n');
         const map = {};
-        for (let i = 1; i < rows.length; i++) {
-          const [name, imageUrl, sizesRaw] = rows[i];
-          if (name) {
-            map[name.trim()] = {
-              image: imageUrl,
-              sizes: (sizesRaw || "")
-                .split(",")
-                .map((s) => s.trim())
-                .filter((s) => s),
+        
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+          
+          // Parse CSV line with proper quote handling
+          const columns = [];
+          let current = '';
+          let inQuotes = false;
+          
+          for (let j = 0; j < line.length; j++) {
+            const char = line[j];
+            
+            if (char === '"') {
+              inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
+              columns.push(current.trim());
+              current = '';
+            } else {
+              current += char;
+            }
+          }
+          columns.push(current.trim()); // Add the last column
+          
+          const [name, imageUrl, sizesRaw] = columns;
+          
+          if (name && name.trim()) {
+            const cleanName = name.trim();
+            let sizes = [];
+            
+            if (sizesRaw && sizesRaw.trim()) {
+              // Remove any remaining quotes and split properly
+              const cleanSizes = sizesRaw.replace(/^["']|["']$/g, '').trim();
+              if (cleanSizes) {
+                sizes = cleanSizes.split(',').map(s => s.trim()).filter(s => s);
+              }
+            }
+            
+            // If no sizes found, default to "One Size"
+            if (sizes.length === 0) {
+              sizes = ["One Size"];
+            }
+            
+            map[cleanName] = {
+              image: imageUrl ? imageUrl.trim() : "",
+              sizes: sizes
             };
           }
         }
+        
+        console.log("Parsed product data:", map); // Debug log
         return map;
       };
 
@@ -75,6 +124,7 @@
         const name = urlParams.get("name") || "";
         const email = urlParams.get("email") || "";
         const phone = urlParams.get("phone") || "";
+        const salesManager = urlParams.get("salesManager") || "";
         const productsParam = urlParams.get("products") || "";
         const selectedProducts = productsParam
           .split(",")
@@ -90,6 +140,7 @@
         form.innerHTML += `<input type="hidden" name="name" value="${name}">
                          <input type="hidden" name="email" value="${email}">
                          <input type="hidden" name="phone" value="${phone}">
+                         <input type="hidden" name="salesManager" value="${salesManager}">
                          <input type="hidden" name="productCount" value="${selectedProducts.length}">`;
 
         selectedProducts.forEach((original, i) => {
@@ -100,6 +151,9 @@
           };
           const sizes = data.sizes.length ? data.sizes : ["One Size"];
           const productId = `product_${i}`;
+          const baseName = trueName.replace(/ \(Junior\)| \(Adult\)/, "");
+
+          console.log(`Product ${i}: ${trueName}`, data); // Debug log
 
           form.innerHTML += `<h3 style="margin-top:30px;">${trueName}</h3>
           <input type="hidden" name="${productId}_name" value="${trueName}">
@@ -117,12 +171,16 @@
               .join("")}
           </tr></tbody></table>`;
 
-          if (/Match T-Shirt|Match Shirt|Match Shorts/.test(trueName)) {
+          if (personalisedItems.nameAndNumber.includes(baseName)) {
             form.innerHTML += `
             <h4>Personalisation for ${trueName}</h4>
-            <table><thead><tr>${
-              trueName.includes("Shirt") ? "<th>Name</th>" : ""
-            }<th>Number</th><th>Size</th></tr></thead>
+            <table><thead><tr><th>Name</th><th>Number</th><th>Size</th></tr></thead>
+            <tbody id="${productId}_personalisationBody"></tbody>
+            </table>`;
+          } else if (personalisedItems.numberOnly.includes(baseName)) {
+            form.innerHTML += `
+            <h4>Personalisation for ${trueName}</h4>
+            <table><thead><tr><th>Number</th><th>Size</th></tr></thead>
             <tbody id="${productId}_personalisationBody"></tbody>
             </table>`;
           }
@@ -164,9 +222,10 @@
       };
 
       function updatePersonalisation(productId, trueName, size, count) {
-        const tbody = document.getElementById(
-          productId + "_personalisationBody"
-        );
+        const baseName = trueName.replace(/ \(Junior\)| \(Adult\)/, "");
+        const tbody = document.getElementById(productId + "_personalisationBody");
+        if (!tbody) return;
+        
         const currentRows = Array.from(
           tbody.querySelectorAll(`tr[data-size="${size}"]`)
         );
@@ -175,15 +234,20 @@
           currentRows.forEach((row) => row.remove());
           return;
         }
+
         const diff = count - currentRows.length;
         if (diff > 0) {
           for (let i = currentRows.length; i < count; i++) {
             const tr = document.createElement("tr");
             tr.dataset.size = size;
-            if (trueName.includes("Shirt")) {
+            
+            if (personalisedItems.nameAndNumber.includes(baseName)) {
               tr.innerHTML += `<td><input type="text" name="${productId}_name_${size}_${i}" placeholder="Optional"></td>`;
+              tr.innerHTML += `<td><input type="text" name="${productId}_number_${size}_${i}" placeholder="Optional"></td>`;
+            } else if (personalisedItems.numberOnly.includes(baseName)) {
+              tr.innerHTML += `<td><input type="text" name="${productId}_number_${size}_${i}" placeholder="Optional"></td>`;
             }
-            tr.innerHTML += `<td><input type="text" name="${productId}_number_${size}_${i}" placeholder="Optional"></td>`;
+            
             tr.innerHTML += `<td><input type="hidden" name="${productId}_size_${size}_${i}" value="${size}">${size}</td>`;
             tbody.appendChild(tr);
           }

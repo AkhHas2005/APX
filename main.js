@@ -6,7 +6,15 @@ async function submitOrder(p, spreadsheetId, spreadsheetUrl) {
   const email = p.email || "akhtarhasan2005@gmail.com";
   const phone = p.phone || "Not Provided";
   const address = p.deliveryAddress || "Not Provided";
+  const salesManager = p.salesManager || "";
   const productCount = parseInt(p.productCount, 10);
+
+  // Determine sales manager email
+  const jamesEmail = "pythonprogramsha@gmail.com";
+  const craigEmail = "fifautuber2016@gmail.com";
+  const managerEmail = salesManager === "James" ? jamesEmail :
+                       salesManager === "Craig" ? craigEmail :
+                       "akhtarhasan2005@gmail.com";
 
   let orderSummary = `🛍️ Order Summary for ${name}\n\n`;
 
@@ -70,11 +78,12 @@ ${spreadsheetUrl}
 `;
 
   try {
-    await sendEmail("akhtarhasan2005@gmail.com", `New Kit Order from ${name}`, companySummary);
+    // Send to appropriate sales manager
+    await sendEmail(managerEmail, `New Kit Order from ${name}`, companySummary);
     if (email.includes("@")) {
       await sendEmail(email, `Your Kit Order Confirmation`, `Hi ${name},\n\nWe received your order:\n\n${clientSummary}\nThanks,\nAPX Performance`);
     }
-    console.log("✅ Emails sent successfully");
+    console.log(`✅ Emails sent successfully to ${salesManager} (${managerEmail})`);
   } catch (emailErr) {
     console.error("❌ Email sending failed:", emailErr);
   }
@@ -108,7 +117,7 @@ async function cloneTemplate(templateId, name) {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      name: `Order – ${name}`,
+      name: `Order – ${name} – ${new Date().toLocaleDateString('en-GB')}`,
       parents: ['1QKzgRa9MbTUEX0CFhkl8vKfSz-vAwE-E']
     })
   });
@@ -119,8 +128,9 @@ async function cloneTemplate(templateId, name) {
 
 async function fillSpreadsheet(spreadsheetId, p, name) {
   const sizeColumns = {
-    YXXS: 10, YXS: 11, YS: 12, YM: 13, YL: 14, XS: 15, S: 16, 
-    M: 17, L: 18, XL: 19, "2XL": 20, "3XL": 21, "4XL": 22, "5XL": 23, "6XL": 24,
+    "YXXS": 10, "YXS": 11, "YS": 12, "YM": 13, "YL": 14,
+    "XS": 15, "S": 16, "M": 17, "L": 18, "XL": 19,
+    "2XL": 20, "3XL": 21, "4XL": 22, "5XL": 23, "6XL": 24,
     "12": 10, "1": 11, "2": 12, "3": 13, "4": 14, "5": 15, "6": 16,
     "7": 17, "8": 18, "9": 19, "10": 20, "11": 21,
     "One Size": 26
@@ -150,7 +160,9 @@ async function fillSpreadsheet(spreadsheetId, p, name) {
   const productCount = parseInt(p.productCount, 10);
   let rowCursor = 9;
   const personalisationRows = [];
+  const productsToWrite = [];
 
+  // Identify products with quantities
   for (let i = 0; i < productCount; i++) {
     const base = `product_${i}`;
     const productName = p[`${base}_name`];
@@ -166,14 +178,22 @@ async function fillSpreadsheet(spreadsheetId, p, name) {
       }
     });
 
+    if (Object.values(sizeQtyMap).some(q => q > 0)) {
+      productsToWrite.push({ index: i, name: productName, sizeQtyMap });
+    }
+  }
+
+  // Write product rows
+  productsToWrite.forEach(({ index, name: productName, sizeQtyMap }) => {
+    const base = `product_${index}`;
     const rowUpdates = [];
     rowUpdates.push({ userEnteredValue: { stringValue: productName } }); // First column
 
     for (let c = 1; c <= 26; c++) {
       let entered = "";
       for (const [size, col] of Object.entries(sizeColumns)) {
-        if (col === c) {
-          entered = sizeQtyMap[size] ? `${sizeQtyMap[size]}` : "";
+        if (col === c && sizeQtyMap[size]) {
+          entered = `${sizeQtyMap[size]}`;
         }
       }
       rowUpdates.push({
@@ -189,6 +209,7 @@ async function fillSpreadsheet(spreadsheetId, p, name) {
       }
     });
 
+    // Collect personalisation data
     for (const size in sizeQtyMap) {
       const qty = sizeQtyMap[size];
       for (let r = 0; r < qty; r++) {
@@ -209,10 +230,10 @@ async function fillSpreadsheet(spreadsheetId, p, name) {
     }
 
     rowCursor++;
-  }
+  });
 
   // Personalisation block: starting row after main items + 2
-  let pStartRow = Math.max(rowCursor + 2, 18);
+  let pStartRow = Math.max(rowCursor + 2, 19);
   personalisationRows.forEach(({ garment, label, position, size }, i) => {
     requests.push({
       updateCells: {
@@ -220,9 +241,10 @@ async function fillSpreadsheet(spreadsheetId, p, name) {
         rows: [{
           values: [
             { userEnteredValue: { stringValue: garment } },
+            {}, {}, // Skip columns B and C
             { userEnteredValue: { stringValue: label } },
             { userEnteredValue: { stringValue: position } },
-            {}, {}, {}, {},  // Padding columns
+            {}, {}, // Skip columns F and G
             { userEnteredValue: { stringValue: size } }
           ]
         }],
@@ -236,7 +258,7 @@ async function fillSpreadsheet(spreadsheetId, p, name) {
     resource: { requests }
   });
 
-  console.log(`✅ Filled spreadsheet for ${name} with ${productCount} products and ${personalisationRows.length} personalisations`);
+  console.log(`✅ Filled spreadsheet for ${name} with ${productsToWrite.length} products and ${personalisationRows.length} personalisations`);
 }
 
 function exportSheetAsExcel(fileId, fileName) {
