@@ -231,23 +231,4 @@ async function buildForm() {
     <textarea name="deliveryAddress" rows="4" cols="50" required placeholder="Enter full delivery address"></textarea>
     <br><br>
     <button type="submit">Submit Final Order</button>`;
-
-  form.onsubmit = async function(e) {
-    e.preventDefault();
-    const formData = new FormData(form);
-    const payload = Object.fromEntries(formData.entries());
-
-    try {
-      const res = await fetch(scriptUrl, {
-        method: "POST",
-        body: JSON.stringify(payload),
-        headers: { "Content-Type": "application/json" }
-      });
-      const result = await res.json();
-      document.getElementById("responseMsg").innerHTML = result.message || "✅ Order submitted successfully.";
-    } catch (err) {
-      console.error("❌ Submission failed:", err);
-      document.getElementById("responseMsg").innerText = "❌ Submission failed. Please try again.";
-    }
-  };
 }
