@@ -1,5 +1,4 @@
 const csvUrl = 'https://raw.githubusercontent.com/AkhHas2005/APX/main/Product%20Links%20-%20ProductData.csv';
-const scriptUrl = 'https://script.google.com/macros/s/AKfycbxL5ehds4Emw4xAESZkWKszNCdFHDdnKLV-Id4POGgxMqdnlpMwufljbJXCSHprK5RNNw/exec';
 
 document.addEventListener("DOMContentLoaded", buildForm);
 
@@ -13,19 +12,14 @@ async function parseCsv(url) {
   try {
     const res = await fetch(url);
     const text = await res.text();
-    console.log("CSV text received:", text.substring(0, 500) + "...");
-    
     const rows = text.trim().split('\n').map(row => {
-      // Handle CSV with proper comma parsing (account for quotes)
       const result = [];
       let current = '';
       let inQuotes = false;
-      
       for (let i = 0; i < row.length; i++) {
         const char = row[i];
-        if (char === '"') {
-          inQuotes = !inQuotes;
-        } else if (char === ',' && !inQuotes) {
+        if (char === '"') inQuotes = !inQuotes;
+        else if (char === ',' && !inQuotes) {
           result.push(current.trim());
           current = '';
         } else {
@@ -35,29 +29,17 @@ async function parseCsv(url) {
       result.push(current.trim());
       return result;
     });
-    
-    console.log("Parsed rows sample:", rows.slice(0, 5));
-    
+
     const map = {};
     for (let i = 1; i < rows.length; i++) {
       const [name, imageUrl] = rows[i];
       if (name && name.trim()) {
         const cleanName = name.trim().replace(/"/g, '');
         const cleanImageUrl = imageUrl ? imageUrl.trim().replace(/"/g, '') : '';
-        
-        // Automatically determine sizes based on product name
         const sizes = determineSizes(cleanName);
-        
-        map[cleanName] = {
-          image: cleanImageUrl,
-          sizes: sizes
-        };
-        
-        console.log(`Mapped "${cleanName}":`, map[cleanName]);
+        map[cleanName] = { image: cleanImageUrl, sizes };
       }
     }
-    
-    console.log("Final productData map:", map);
     return map;
   } catch (error) {
     console.error("Error parsing CSV:", error);
@@ -65,45 +47,25 @@ async function parseCsv(url) {
   }
 }
 
-// Add this new function to determine sizes automatically
 function determineSizes(productName) {
   const lowerName = productName.toLowerCase();
-  
-  // Check if it's a junior item
   const isJunior = lowerName.includes('junior') || lowerName.includes('(junior)');
-  
-  // Check if it's socks
   const isSocks = lowerName.includes('socks');
-  
-  // Check if it's training gloves (which should be one size)
   const isGloves = lowerName.includes('gloves') || lowerName.includes('glove');
-  
-  // Check if it's accessories (one size items)
-  const oneTimeItems = [
-    'towel', 'backpack', 'sliders', 'bucket hat', 'snood', 'bobble hat'
-  ];
+  const oneTimeItems = ['towel', 'backpack', 'sliders', 'bucket hat', 'snood', 'bobble hat'];
   const isOneSize = oneTimeItems.some(item => lowerName.includes(item)) || isGloves;
-  
-  if (isOneSize) {
-    return ["One Size"];
-  } else if (isSocks) {
-    if (isJunior) {
-      return ["7-12", "12-3"];
-    } else {
-      return ["4-7", "8-12"];
-    }
-  } else if (isJunior) {
-    return ["YXXS", "YXS", "YS", "YM", "YL", "XS"];
-  } else {
-    // Adult clothing items
-    return ["S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL", "6XL"];
-  }
+
+  if (isOneSize) return ["One Size"];
+  if (isSocks) return isJunior ? ["7-12", "12-3"] : ["4-7", "8-12"];
+  return isJunior
+    ? ["YXXS", "YXS", "YS", "YM", "YL", "XS"]
+    : ["S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL", "6XL"];
 }
 
 function updatePersonalisation(productId, trueName, size, count) {
   const tbody = document.getElementById(productId + '_personalisationBody');
-  if (!tbody) return; // ✅ Safely exit if no personalisation is needed
-  
+  if (!tbody) return;
+
   const currentRows = Array.from(tbody.querySelectorAll(`tr[data-size="${size}"]`));
   count = parseInt(count);
   if (!count || count <= 0) {
@@ -159,55 +121,23 @@ async function buildForm() {
 
   selectedProducts.forEach((original, i) => {
     const trueName = normalizeProductName(original);
-    
-    console.log(`\n=== Processing Product ${i}: ${original} -> ${trueName} ===`);
-    
-    // Try to find club-specific version first
-    let data = null;
-    let displayImage = "";
-    let sizes = [];
-    
-    // Check if we have club-specific data
-    const clubData = productData[`${name} ${trueName}`];
-    const defaultData = productData[trueName];
-    
-    console.log(`Club data for "${name} ${trueName}":`, clubData);
-    console.log(`Default data for "${trueName}":`, defaultData);
-    
-    if (clubData) {
-      // Use club-specific data
-      data = clubData;
-      displayImage = clubData.image || "";
-      sizes = clubData.sizes || determineSizes(trueName);
-      console.log(`Using club-specific data with sizes:`, sizes);
-    } else if (defaultData) {
-      // Use default data
-      data = defaultData;
-      displayImage = defaultData.image || "";
-      sizes = defaultData.sizes || determineSizes(trueName);
-      console.log(`Using default data with sizes:`, sizes);
-    } else {
-      // Fallback - create data with automatic size determination
-      sizes = determineSizes(trueName);
-      displayImage = "";
-      console.log(`No data found, using automatic sizes:`, sizes);
-    }
-    
-    // Ensure we have valid sizes
-    if (!sizes || sizes.length === 0) {
-      sizes = determineSizes(trueName);
-      console.log(`Fallback to automatic size determination:`, sizes);
-    }
-    
-    const productId = `product_${i}`;
     const baseName = trueName.replace(/ \(Junior\)| \(Adult\)/, "");
 
-    console.log(`Final result for ${trueName}:`, { sizes, displayImage });
+    const clubSpecificKey = `${name} ${baseName}`;
+    const defaultKey = baseName;
+
+    const clubData = productData[clubSpecificKey];
+    const defaultData = productData[defaultKey];
+
+    const sizes = clubData?.sizes || defaultData?.sizes || determineSizes(baseName);
+    const imageUrl = clubData?.image || defaultData?.image || "";
+
+    const productId = `product_${i}`;
 
     form.innerHTML += `<h3 style="margin-top:30px;">${trueName}</h3>
       <input type="hidden" name="${productId}_name" value="${trueName}">
       <table><thead><tr>
-        <th style="width: 200px;">${displayImage ? `<img src="${displayImage}">` : ""}</th>
+        <th style="width: 200px;">${imageUrl ? `<img src="${imageUrl}">` : ""}</th>
         ${sizes.map(size => `<th style="width: 80px; min-width: 60px;">${size}</th>`).join('')}
       </tr></thead><tbody><tr><td>Qty</td>
         ${sizes.map(size => `<td><input type="number" name="${productId}_${size}" min="0" value="0" style="width: 60px;"
