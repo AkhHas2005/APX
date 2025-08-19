@@ -4,6 +4,48 @@
   <meta charset="UTF-8" />
   <title>Select Sizes & Quantities</title>
   <style>
+  @font-face {
+  font-family: 'Brown Std';
+  src: url('https://raw.githubusercontent.com/AkhHas2005/APX/main/fonts/BrownStd-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Brown Std';
+  src: url('https://raw.githubusercontent.com/AkhHas2005/APX/main/fonts/BrownStd-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Brown Std';
+  src: url('https://raw.githubusercontent.com/AkhHas2005/APX/main/fonts/BrownStd-Light.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+}
+/* Bold for headings */
+h1, h2, h3 {
+  font-family: 'Brown Std', Arial, sans-serif;
+  font-weight: 700;
+}
+
+/* Light for buttons and helper text */
+button {
+  font-family: 'Brown Std', Arial, sans-serif;
+  font-weight: 300;
+}
+
+/* Regular for everything else */
+body,
+p,
+label,
+input,
+select {
+  font-family: 'Brown Std', Arial, sans-serif;
+  font-weight: 400;
+}
+
   :root {
     --apx-black: #191938;
     --apx-red: #C10000;
@@ -106,7 +148,20 @@
   <form id="sizeForm" method="POST" action="https://script.google.com/macros/s/AKfycbxL5ehds4Emw4xAESZkWKszNCdFHDdnKLV-Id4POGgxMqdnlpMwufljbJXCSHprK5RNNw/exec" target="hidden_iframe">
   <!-- form content will be injected here -->
   </form>
-  <iframe name="hidden_iframe" style="display:none;"></iframe>
+  <iframe name="hidden_iframe" style="display:none;" onload="showConfirmation()"></iframe>
   <div id="responseMsg" style="margin-top: 20px; font-weight: bold"></div>
+
+<script>
+  function showConfirmation() {
+    const email = new URLSearchParams(window.location.search).get("email") || "your email";
+    document.getElementById("responseMsg").innerHTML = `
+      <h2 style="color: green; text-align: center; margin-top: 50px;">
+        ✅ Your order is confirmed!<br>
+        A confirmation email has been sent to <strong>${email}</strong>.<br>
+        If you notice any issues, feel free to reach out to us directly.
+      </h2>
+    `;
+  }
+</script>
 </body>
 </html>
