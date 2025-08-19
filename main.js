@@ -102,6 +102,8 @@ function determineSizes(productName) {
 
 function updatePersonalisation(productId, trueName, size, count) {
   const tbody = document.getElementById(productId + '_personalisationBody');
+  if (!tbody) return; // ✅ Safely exit if no personalisation is needed
+  
   const currentRows = Array.from(tbody.querySelectorAll(`tr[data-size="${size}"]`));
   count = parseInt(count);
   if (!count || count <= 0) {
