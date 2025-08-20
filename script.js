@@ -22,40 +22,74 @@ document.getElementById("searchInput").addEventListener("input", () => {
   updateDropdowns();
 });
 
+function updateDropdowns() {
+  document.querySelectorAll(".product-row").forEach(row => {
+    const checkbox = row.querySelector(".filter-toggle");
+    const select = row.querySelector(".product-select");
+
+    if (checkbox.checked && filteredCodes.length > 0) {
+      populateDropdown(select, filteredCodes);
+    } else {
+      populateDropdown(select); // show all
+    }
+  });
+}
+
+function populateDropdown(select, filterList = []) {
+  select.innerHTML = "";
+  categories.forEach(cat => {
+    const optg = document.createElement("optgroup");
+    optg.label = cat.name;
+    cat.items.forEach(it => {
+      if (filterList.length === 0 || filterList.includes(it.code)) {
+        const opt = document.createElement("option");
+        opt.value = it.code;
+        opt.textContent = `${it.name} (${it.code})`;
+        optg.appendChild(opt);
+      }
+    });
+    if (optg.children.length > 0) select.appendChild(optg);
+  });
+}
+
 function parseCSV(data) {
   categories = [];
   productMap = {};
   let currentCat = null;
 
-  data.split("\n").forEach(line => {
-    const cols = line.split(",").map(col => col.trim());
-    if (cols.length < 2 || !cols[1]) return;
+  const lines = data.split("\n");
 
-    const firstCell = cols[0];
-    const isAllCaps = /^[A-Z0-9 ()\-]+$/.test(firstCell) && firstCell === firstCell.toUpperCase();
+  lines.forEach(line => {
+    const cols = line.split(",").map(c => c.trim());
+    const first = cols[0];
+    const second = cols[1];
 
-    if (isAllCaps && cols.some(c => c.toUpperCase() === "WSP")) {
-      currentCat = { name: firstCell, items: [] };
+    // Start new category if first column is ALL CAPS and second column is "PRODUCT CODE"
+    const isHeader = /^[A-Z0-9 ()\-]+$/.test(first) && second?.toUpperCase() === "PRODUCT CODE";
+    if (isHeader) {
+      currentCat = { name: first, items: [] };
       categories.push(currentCat);
       return;
     }
 
-    const code = cols[1];
-    if (currentCat && code.startsWith("APX/")) {
-      const cleanNumber = val => parseFloat(val?.replace(/[£� ]/g, "")) || 0;
+    // Skip lines with no product code
+    if (!second || !second.startsWith("APX/")) return;
+
+    if (currentCat) {
+      const clean = val => parseFloat(val?.replace(/[£� ]/g, "")) || 0;
       const item = {
-        name: cols[0],
-        code,
-        wsp: cleanNumber(cols[3]),
+        name: first,
+        code: second,
+        wsp: clean(cols[3]),
         prices: {
-          C: cleanNumber(cols[4]),
-          B: cleanNumber(cols[6]),
-          A: cleanNumber(cols[8]),
-          "A+": cleanNumber(cols[10])
+          C: clean(cols[4]),
+          B: clean(cols[6]),
+          A: clean(cols[8]),
+          "A+": clean(cols[10])
         }
       };
       currentCat.items.push(item);
-      productMap[code] = item;
+      productMap[item.code] = item;
     }
   });
 }
@@ -82,11 +116,16 @@ function addProductRow(container, isRemovable) {
   const row = document.createElement("div");
   row.className = "product-row";
 
+  const label = document.createElement("label");
+  label.textContent = "Filter this row by search:";
+  label.style.marginRight = "6px";
+
   const filterToggle = document.createElement("input");
   filterToggle.type = "checkbox";
   filterToggle.className = "filter-toggle";
   filterToggle.checked = true;
-  filterToggle.title = "Include this row in search filtering";
+
+  row.appendChild(label);
   row.appendChild(filterToggle);
 
   const select = document.createElement("select");
@@ -115,34 +154,6 @@ function addProductRow(container, isRemovable) {
   }
 
   populateDropdown(select);
-}
-
-function populateDropdown(select) {
-  select.innerHTML = "";
-  categories.forEach(cat => {
-    const optg = document.createElement("optgroup");
-    optg.label = cat.name;
-    cat.items.forEach(it => {
-      if (filteredCodes.length === 0 || filteredCodes.includes(it.code)) {
-        const opt = document.createElement("option");
-        opt.value = it.code;
-        opt.textContent = `${it.name} (${it.code})`;
-        optg.appendChild(opt);
-      }
-    });
-    if (optg.children.length > 0) select.appendChild(optg);
-  });
-}
-
-function updateDropdowns() {
-  document.querySelectorAll(".product-row").forEach(row => {
-    const shouldFilter = row.querySelector(".filter-toggle").checked;
-    const select = row.querySelector(".product-select");
-
-    if (shouldFilter) {
-      populateDropdown(select);
-    }
-  });
 }
 
 function calculateProfit() {
