@@ -143,6 +143,7 @@ async function buildForm() {
   const phone = urlParams.get("phone") || "";
   const salesManager = urlParams.get("salesManager") || "";
   const productsParam = urlParams.get("products") || "";
+
   const selectedProducts = productsParam
     .split(",")
     .map((p) => {
@@ -151,9 +152,7 @@ async function buildForm() {
     })
     .filter((p) => p.name && p.ageGroup);
 
-  document.getElementById(
-    "formHeading"
-  ).innerText = `Select Sizes & Quantities for ${name}`;
+  document.getElementById("formHeading").innerText = `Select Sizes & Quantities for ${name}`;
   const productData = await parseCsv(csvUrl);
   const form = document.getElementById("sizeForm");
 
@@ -170,15 +169,21 @@ async function buildForm() {
       "Away Match T-Shirt",
       "Away Match Shirt (Long Sleeve)",
       "Sub Training T-Shirt",
-      "Sub Training Vest",
+      "Sub Training Vest"
     ],
     numberOnly: [
       "Home Match Shorts",
       "Away Match Shorts",
       "1/4 Zip Tracksuit Top",
       "Zipped Hoodie",
-      "Track Pants",
+      "Track Pants"
     ],
+    trainingWear: [
+      "Sub Training T-Shirt",
+      "Sub Training Vest",
+      "1/4 Zip Tracksuit Top",
+      "Zipped Hoodie"
+    ]
   };
 
   selectedProducts.forEach((original, i) => {
@@ -200,26 +205,21 @@ async function buildForm() {
     form.innerHTML += `<h3 style="margin-top:30px;">${trueName}</h3>
       <input type="hidden" name="${productId}_name" value="${trueName}">
       <table><thead><tr>
-        <th style="width: 200px;">${
-          imageUrl ? `<img src="${imageUrl}">` : ""
-        }</th>
-        ${sizes
-          .map(
-            (size) => `<th style="width: 80px; min-width: 60px;">${size}</th>`
-          )
-          .join("")}
+        <th style="width: 200px;">${imageUrl ? `<img src="${imageUrl}">` : ""}</th>
+        ${sizes.map(size => `<th style="width: 80px; min-width: 60px;">${size}</th>`).join("")}
       </tr></thead><tbody><tr><td>Qty</td>
-        ${sizes
-          .map(
-            (
-              size
-            ) => `<td><input type="number" name="${productId}_${size}" min="0" value="0" style="width: 60px;"
-          oninput="updatePersonalisation('${productId}', '${trueName}', '${size}', this.value)"></td>`
-          )
-          .join("")}
+        ${sizes.map(size => `<td><input type="number" name="${productId}_${size}" min="0" value="0" style="width: 60px;"
+          oninput="updatePersonalisation('${productId}', '${trueName}', '${size}', this.value)"></td>`).join("")}
       </tr></tbody></table>`;
 
-    if (personalisedItems.nameAndNumber.includes(baseName)) {
+    // Personalisation table
+    if (personalisedItems.trainingWear.includes(baseName)) {
+      form.innerHTML += `
+        <h4>Personalisation for ${trueName}</h4>
+        <table><thead><tr><th>Initials or Number</th><th>Size</th></tr></thead>
+        <tbody id="${productId}_personalisationBody"></tbody>
+        </table>`;
+    } else if (personalisedItems.nameAndNumber.includes(baseName)) {
       form.innerHTML += `
         <h4>Personalisation for ${trueName}</h4>
         <table><thead><tr><th>Name</th><th>Number</th><th>Size</th></tr></thead>
