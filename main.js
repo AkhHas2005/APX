@@ -220,12 +220,19 @@ async function buildForm() {
 
 // Confirmation logic for after sizes form submitted
 function showConfirmation() {
-  if (!formSubmitted) return;
+  if (!formSubmitted) {
+    console.log("The form wasn't submitted!");
+    return;
+  }
 
   const msgDiv = document.getElementById("responseMsg");
-  if (!msgDiv) return;
+  if (!msgDiv) { 
+    console.log("The message div can't be found!");
+    return;
+  }
 
   const email = new URLSearchParams(window.location.search).get("email") || "your email";
+  console.log("Customer's email is: ",email);
   msgDiv.innerHTML = `
     <h2 style="color: green; text-align: center; margin-top: 50px;">
       ✅ Your order is confirmed!<br>
