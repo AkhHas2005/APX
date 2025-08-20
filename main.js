@@ -42,9 +42,7 @@ async function parseCsv(url) {
         const rawName = name.trim().replace(/"/g, "");
         const trueName = normalizeProductName(rawName);
         const cleanImageUrl = imageUrl ? imageUrl.trim().replace(/"/g, "") : "";
-        ageGroup = rawName.search("Adult") ? "Adult" : "Junior";
-        const sizes = determineSizes(trueName, ageGroup);
-        map[trueName] = { image: cleanImageUrl, sizes };
+        map[trueName] = { image: cleanImageUrl };
       }
     }
     return map;
@@ -170,10 +168,7 @@ async function buildForm() {
     const clubData = productData[clubSpecificKey];
     const defaultData = productData[defaultKey];
 
-    const sizes =
-      clubData?.sizes ||
-      defaultData?.sizes ||
-      determineSizes(trueName, ageGroup);
+    const sizes = determineSizes(trueName, ageGroup);
     const imageUrl = clubData?.image || defaultData?.image || "";
 
     const productId = `product_${i}`;
