@@ -61,22 +61,17 @@ function determineSizes(trueName, ageGroup) {
   const isAdult = ageGroup === "Adult";
   const isSocks = lowerName.includes("socks");
   const isGloves = lowerName.includes("glove");
-  const isOneSize =
-    [
-      "towel",
-      "backpack",
-      "sliders",
-      "bucket hat",
-      "snood",
-      "bobble hat",
-      "cap",
-      "bag",
-      "training socks",
-    ].some((item) => lowerName.includes(item)) || isGloves;
+  const isOneSize = [
+    "towel", "backpack", "sliders", "bucket hat", "snood",
+    "bobble hat", "cap", "bag", "training socks"
+  ].some(item => lowerName.includes(item)) || isGloves;
 
   if (isOneSize) return ["One Size"];
+
   if (isSocks) {
-    return isJunior ? ["12-3", "4-6"] : ["7-11", "12-14"];
+    return isJunior
+      ? ["12-3 (S)", "4-6 (M)"]
+      : ["4-6 (M)", "7-11 (L)", "12-14 (XL)"];
   }
 
   return isJunior
@@ -88,23 +83,50 @@ function updatePersonalisation(productId, trueName, size, count) {
   const tbody = document.getElementById(productId + "_personalisationBody");
   if (!tbody) return;
 
-  const currentRows = Array.from(
-    tbody.querySelectorAll(`tr[data-size="${size}"]`)
-  );
+  const currentRows = Array.from(tbody.querySelectorAll(`tr[data-size="${size}"]`));
   count = parseInt(count);
   if (!count || count <= 0) {
-    currentRows.forEach((row) => row.remove());
+    currentRows.forEach(row => row.remove());
     return;
   }
 
-  const diff = count - currentRows.length;
+  const isTrainingWear = [
+    "Sub Training T-Shirt",
+    "Sub Training Vest",
+    "1/4 Zip Tracksuit Top",
+    "Zipped Hoodie"
+  ].includes(trueName.replace(/ \(Junior\)| \(Adult\)/, ""));
+
+  const isNameAndNumber = [
+    "Home Match T-Shirt",
+    "Home Match Shirt (Long Sleeve)",
+    "Away Match T-Shirt",
+    "Away Match Shirt (Long Sleeve)",
+    "Sub Training T-Shirt",
+    "Sub Training Vest"
+  ].includes(trueName.replace(/ \(Junior\)| \(Adult\)/, ""));
+
+  const isNumberOnly = [
+    "Home Match Shorts",
+    "Away Match Shorts",
+    "1/4 Zip Tracksuit Top",
+    "Zipped Hoodie",
+    "Track Pants"
+  ].includes(trueName.replace(/ \(Junior\)| \(Adult\)/, ""));
+
   for (let i = currentRows.length; i < count; i++) {
     const tr = document.createElement("tr");
     tr.dataset.size = size;
-    if (trueName.includes("Shirt")) {
-      tr.innerHTML += `<td><input type="text" name="${productId}_name_${size}_${i}" placeholder="Optional"></td>`;
+
+    if (isTrainingWear) {
+      tr.innerHTML += `<td><input type="text" name="${productId}_initials_${size}_${i}" maxlength="3" style="text-transform:uppercase;" placeholder="Initials or Number"></td>`;
+    } else if (isNameAndNumber) {
+      tr.innerHTML += `<td><input type="text" name="${productId}_name_${size}_${i}" style="text-transform:uppercase;" placeholder="Name"></td>`;
+      tr.innerHTML += `<td><input type="text" name="${productId}_number_${size}_${i}" maxlength="2" inputmode="numeric" pattern="[0-9]*" style="text-transform:uppercase;" placeholder="Number"></td>`;
+    } else if (isNumberOnly) {
+      tr.innerHTML += `<td><input type="text" name="${productId}_number_${size}_${i}" maxlength="2" inputmode="numeric" pattern="[0-9]*" style="text-transform:uppercase;" placeholder="Number"></td>`;
     }
-    tr.innerHTML += `<td><input type="text" name="${productId}_number_${size}_${i}" placeholder="Optional"></td>`;
+
     tr.innerHTML += `<td><input type="hidden" name="${productId}_size_${size}_${i}" value="${size}">${size}</td>`;
     tbody.appendChild(tr);
   }

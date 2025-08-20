@@ -1,12 +1,16 @@
 let categories = [];
 let productMap = {};
 let filteredCodes = [];
+let hasLoadedOnce = false;
 
 document.getElementById("loadData").addEventListener("click", async () => {
   const res = await fetch("https://raw.githubusercontent.com/AkhHas2005/APX/main/data/2024%20Master%20Price%20List.csv");
   const text = await res.text();
   parseCSV(text);
-  renderProductInputs();
+  if (!hasLoadedOnce) {
+    renderProductInputs();
+    hasLoadedOnce = true;
+  }
 });
 
 document.getElementById("searchInput").addEventListener("input", () => {
@@ -27,15 +31,18 @@ function parseCSV(data) {
     const cols = line.split(",").map(col => col.trim());
     if (cols.length < 2 || !cols[1]) return;
 
-    if (cols.some(c => c.toUpperCase() === "WSP")) {
-      currentCat = { name: cols[0], items: [] };
+    const firstCell = cols[0];
+    const isAllCaps = /^[A-Z0-9 ()\-]+$/.test(firstCell) && firstCell === firstCell.toUpperCase();
+
+    if (isAllCaps && cols.some(c => c.toUpperCase() === "WSP")) {
+      currentCat = { name: firstCell, items: [] };
       categories.push(currentCat);
       return;
     }
 
     const code = cols[1];
     if (currentCat && code.startsWith("APX/")) {
-      const cleanNumber = val => parseFloat(val?.replace(/[£�]/g, "")) || 0;
+      const cleanNumber = val => parseFloat(val?.replace(/[£� ]/g, "")) || 0;
       const item = {
         name: cols[0],
         code,
@@ -75,10 +82,15 @@ function addProductRow(container, isRemovable) {
   const row = document.createElement("div");
   row.className = "product-row";
 
+  const filterToggle = document.createElement("input");
+  filterToggle.type = "checkbox";
+  filterToggle.className = "filter-toggle";
+  filterToggle.checked = true;
+  filterToggle.title = "Include this row in search filtering";
+  row.appendChild(filterToggle);
+
   const select = document.createElement("select");
   select.className = "product-select";
-
-  populateDropdown(select);
   row.appendChild(select);
 
   const qty = document.createElement("input");
@@ -101,6 +113,8 @@ function addProductRow(container, isRemovable) {
   } else {
     container.appendChild(row);
   }
+
+  populateDropdown(select);
 }
 
 function populateDropdown(select) {
@@ -121,8 +135,13 @@ function populateDropdown(select) {
 }
 
 function updateDropdowns() {
-  document.querySelectorAll(".product-select").forEach(select => {
-    populateDropdown(select);
+  document.querySelectorAll(".product-row").forEach(row => {
+    const shouldFilter = row.querySelector(".filter-toggle").checked;
+    const select = row.querySelector(".product-select");
+
+    if (shouldFilter) {
+      populateDropdown(select);
+    }
   });
 }
 
@@ -149,11 +168,17 @@ function calculateProfit() {
 
   const profit = totalRevenue - totalCost;
   const profitPercentage = totalRevenue !== 0 ? (profit / totalRevenue) * 100 : 0;
+  const rounded = profitPercentage.toFixed(1);
+
+  let color = "black";
+  if (profitPercentage <= 20) color = "red";
+  else if (profitPercentage <= 39.9) color = "orange";
+  else color = "green";
 
   document.getElementById("results").innerHTML = `
     <p>Total Cost: £${totalCost.toFixed(2)}</p>
     <p>Total Revenue: £${totalRevenue.toFixed(2)}</p>
     <p><strong>Profit: £${profit.toFixed(2)}</strong></p>
-    <p><strong>Profit Margin: ${profitPercentage.toFixed(2)}%</strong></p>
+    <p><strong style="color:${color}">Profit Margin: ${rounded}%</strong></p>
   `;
 }
