@@ -1,6 +1,8 @@
 const csvUrl =
   "https://raw.githubusercontent.com/AkhHas2005/APX/main/Product%20Links%20-%20ProductData.csv";
 
+let formSubmitted = false;
+
 document.addEventListener("DOMContentLoaded", buildForm);
 
 function normalizeProductName(name) {
@@ -218,9 +220,13 @@ async function buildForm() {
 
 // Confirmation logic for after sizes form submitted
 function showConfirmation() {
-  const email =
-    new URLSearchParams(window.location.search).get("email") || "your email";
-  document.getElementById("responseMsg").innerHTML = `
+  if (!formSubmitted) return;
+
+  const msgDiv = document.getElementById("responseMsg");
+  if (!msgDiv) return;
+
+  const email = new URLSearchParams(window.location.search).get("email") || "your email";
+  msgDiv.innerHTML = `
     <h2 style="color: green; text-align: center; margin-top: 50px;">
       ✅ Your order is confirmed!<br>
       A confirmation email has been sent to <strong>${email}</strong>.<br>
