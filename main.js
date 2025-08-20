@@ -47,16 +47,22 @@ async function parseCsv(url) {
   }
 }
 
-function determineSizes(productName) {
-  const lowerName = productName.toLowerCase();
-  const isJunior = lowerName.includes('junior') || lowerName.includes('(junior)');
+function determineSizes(trueName) {
+  const lowerName = trueName.toLowerCase();
+
+  const isJunior = lowerName.includes('(junior)');
+  const isAdult = lowerName.includes('(adult)');
   const isSocks = lowerName.includes('socks');
-  const isGloves = lowerName.includes('gloves') || lowerName.includes('glove');
-  const oneTimeItems = ['towel', 'backpack', 'sliders', 'bucket hat', 'snood', 'bobble hat'];
-  const isOneSize = oneTimeItems.some(item => lowerName.includes(item)) || isGloves;
+  const isGloves = lowerName.includes('glove');
+  const isOneSize = [
+    'towel', 'backpack', 'sliders', 'bucket hat', 'snood', 'bobble hat', 'cap', 'bag'
+  ].some(item => lowerName.includes(item)) || isGloves;
 
   if (isOneSize) return ["One Size"];
-  if (isSocks) return isJunior ? ["7-12", "12-3"] : ["4-7", "8-12"];
+  if (isSocks) {
+    return isJunior ? ["12-3", "4-6"] : ["7-11", "12-14"];
+  }
+
   return isJunior
     ? ["YXXS", "YXS", "YS", "YM", "YL", "XS"]
     : ["S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL", "6XL"];
@@ -129,7 +135,7 @@ async function buildForm() {
     const clubData = productData[clubSpecificKey];
     const defaultData = productData[defaultKey];
 
-    const sizes = clubData?.sizes || defaultData?.sizes || determineSizes(baseName);
+    const sizes = clubData?.sizes || defaultData?.sizes || determineSizes(trueName);
     const imageUrl = clubData?.image || defaultData?.image || "";
 
     const productId = `product_${i}`;
@@ -163,4 +169,16 @@ async function buildForm() {
     <textarea name="deliveryAddress" rows="4" cols="50" required placeholder="Enter full delivery address"></textarea>
     <br><br>
     <button type="submit">Submit Final Order</button>`;
+}
+
+// Confirmation logic for after sizes form submitted
+function showConfirmation() {
+  const email = new URLSearchParams(window.location.search).get("email") || "your email";
+  document.getElementById("responseMsg").innerHTML = `
+    <h2 style="color: green; text-align: center; margin-top: 50px;">
+      ✅ Your order is confirmed!<br>
+      A confirmation email has been sent to <strong>${email}</strong>.<br>
+      If you notice any issues, feel free to reach out to us directly.
+    </h2>
+  `;
 }

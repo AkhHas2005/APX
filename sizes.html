@@ -41,7 +41,12 @@ body,
 p,
 label,
 input,
-select {
+select,
+thead,
+tbody,
+h4,
+h5,
+h6 {
   font-family: 'Brown Std', Arial, sans-serif;
   font-weight: 400;
 }
@@ -150,18 +155,5 @@ select {
   </form>
   <iframe name="hidden_iframe" style="display:none;" onload="showConfirmation()"></iframe>
   <div id="responseMsg" style="margin-top: 20px; font-weight: bold"></div>
-
-<script>
-  function showConfirmation() {
-    const email = new URLSearchParams(window.location.search).get("email") || "your email";
-    document.getElementById("responseMsg").innerHTML = `
-      <h2 style="color: green; text-align: center; margin-top: 50px;">
-        ✅ Your order is confirmed!<br>
-        A confirmation email has been sent to <strong>${email}</strong>.<br>
-        If you notice any issues, feel free to reach out to us directly.
-      </h2>
-    `;
-  }
-</script>
 </body>
 </html>
