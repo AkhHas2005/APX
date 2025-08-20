@@ -42,7 +42,8 @@ async function parseCsv(url) {
         const rawName = name.trim().replace(/"/g, "");
         const trueName = normalizeProductName(rawName);
         const cleanImageUrl = imageUrl ? imageUrl.trim().replace(/"/g, "") : "";
-        const sizes = determineSizes(trueName);
+        ageGroup = rawName.search("Adult") ? "Adult" : "Junior";
+        const sizes = determineSizes(trueName, ageGroup);
         map[trueName] = { image: cleanImageUrl, sizes };
       }
     }
@@ -53,11 +54,11 @@ async function parseCsv(url) {
   }
 }
 
-function determineSizes(trueName) {
+function determineSizes(trueName, ageGroup) {
   const lowerName = trueName.toLowerCase();
 
-  const isJunior = lowerName.includes("(junior)");
-  const isAdult = lowerName.includes("(adult)");
+  const isJunior = ageGroup === "Junior";
+  const isAdult = ageGroup === "Adult";
   const isSocks = lowerName.includes("socks");
   const isGloves = lowerName.includes("glove");
   const isOneSize =
@@ -70,6 +71,7 @@ function determineSizes(trueName) {
       "bobble hat",
       "cap",
       "bag",
+      "training socks",
     ].some((item) => lowerName.includes(item)) || isGloves;
 
   if (isOneSize) return ["One Size"];
@@ -121,8 +123,11 @@ async function buildForm() {
   const productsParam = urlParams.get("products") || "";
   const selectedProducts = productsParam
     .split(",")
-    .map((p) => decodeURIComponent(p.trim()))
-    .filter((p) => p);
+    .map((p) => {
+      const [name, ageGroup] = decodeURIComponent(p.trim()).split("::");
+      return { name, ageGroup };
+    })
+    .filter((p) => p.name && p.ageGroup);
 
   document.getElementById(
     "formHeading"
@@ -155,7 +160,8 @@ async function buildForm() {
   };
 
   selectedProducts.forEach((original, i) => {
-    const trueName = normalizeProductName(original);
+    const trueName = normalizeProductName(original.name);
+    const ageGroup = original.ageGroup;
     const baseName = trueName.replace(/ \(Junior\)| \(Adult\)/, "");
 
     const clubSpecificKey = `${name} ${baseName}`;
@@ -165,7 +171,9 @@ async function buildForm() {
     const defaultData = productData[defaultKey];
 
     const sizes =
-      clubData?.sizes || defaultData?.sizes || determineSizes(trueName);
+      clubData?.sizes ||
+      defaultData?.sizes ||
+      determineSizes(trueName, ageGroup);
     const imageUrl = clubData?.image || defaultData?.image || "";
 
     const productId = `product_${i}`;

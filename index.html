@@ -1,402 +1,516 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Start Your Kit Order</title>
-  <style>
-    @font-face {
-  font-family: 'Brown Std';
-  src: url('https://raw.githubusercontent.com/AkhHas2005/APX/main/fonts/BrownStd-Bold.otf') format('opentype');
-  font-weight: 700;
-  font-style: normal;
-}
+  <head>
+    <meta charset="UTF-8" />
+    <title>Start Your Kit Order</title>
+    <style>
+      @font-face {
+        font-family: "Brown Std";
+        src: url("https://raw.githubusercontent.com/AkhHas2005/APX/main/fonts/BrownStd-Bold.otf")
+          format("opentype");
+        font-weight: 700;
+        font-style: normal;
+      }
 
-@font-face {
-  font-family: 'Brown Std';
-  src: url('https://raw.githubusercontent.com/AkhHas2005/APX/main/fonts/BrownStd-Regular.otf') format('opentype');
-  font-weight: 400;
-  font-style: normal;
-}
+      @font-face {
+        font-family: "Brown Std";
+        src: url("https://raw.githubusercontent.com/AkhHas2005/APX/main/fonts/BrownStd-Regular.otf")
+          format("opentype");
+        font-weight: 400;
+        font-style: normal;
+      }
 
-@font-face {
-  font-family: 'Brown Std';
-  src: url('https://raw.githubusercontent.com/AkhHas2005/APX/main/fonts/BrownStd-Light.otf') format('opentype');
-  font-weight: 300;
-  font-style: normal;
-}
+      @font-face {
+        font-family: "Brown Std";
+        src: url("https://raw.githubusercontent.com/AkhHas2005/APX/main/fonts/BrownStd-Light.otf")
+          format("opentype");
+        font-weight: 300;
+        font-style: normal;
+      }
 
-/* Bold for headings */
-h1, h2, h3 {
-  font-family: 'Brown Std', Arial, sans-serif;
-  font-weight: 700;
-}
+      /* Bold for headings */
+      h1,
+      h2,
+      h3 {
+        font-family: "Brown Std", Arial, sans-serif;
+        font-weight: 700;
+      }
 
-/* Light for buttons and helper text */
-button,
-div {
-  font-family: 'Brown Std', Arial, sans-serif;
-  font-weight: 300;
-}
+      /* Light for buttons and helper text */
+      button,
+      div {
+        font-family: "Brown Std", Arial, sans-serif;
+        font-weight: 300;
+      }
 
-/* Regular for everything else */
-body,
-p,
-label,
-input,
-select {
-  font-family: 'Brown Std', Arial, sans-serif;
-  font-weight: 400;
-}
+      /* Regular for everything else */
+      body,
+      p,
+      label,
+      input,
+      select {
+        font-family: "Brown Std", Arial, sans-serif;
+        font-weight: 400;
+      }
 
-    .range-section { margin-bottom: 30px; border: 1px solid #ddd; padding: 15px; border-radius: 5px; }
-    .range-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-    .select-all-btn { background: #007cba; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 12px; }
-    .select-all-btn:hover { background: #005a87; }
-    .products-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    .age-group h4 { margin: 0 0 10px 0; padding: 8px; background: #f5f5f5; text-align: center; border-radius: 3px; }
-    .product-item { margin-bottom: 8px; }
-    .product-item label { display: flex; align-items: center; gap: 8px; }
-    .custom-tag { background: #ff6b35; color: white; font-size: 10px; padding: 2px 6px; border-radius: 3px; }
-    .one-size-section { grid-column: 1 / -1; }
-    .one-size-section .products-grid { grid-template-columns: 1fr; }
-    label { display: block; }
-    #phoneError { color: red; display: none; }
-    .sales-manager-note { color: red; font-size: 0.9em; margin-bottom: 10px; }
-    .form-section { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
-  :root {
-    --apx-black: #191938;
-    --apx-red: #C10000;
-    --apx-light-grey: #ECECEC;
-    --apx-dark-grey: #5B5B5B;
-    --font-primary: 'Arial', sans-serif;
-  }
+      .range-section {
+        margin-bottom: 30px;
+        border: 1px solid #ddd;
+        padding: 15px;
+        border-radius: 5px;
+      }
+      .range-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+      }
+      .select-all-btn {
+        background: #007cba;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 12px;
+      }
+      .select-all-btn:hover {
+        background: #005a87;
+      }
+      .products-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+      .age-group h4 {
+        margin: 0 0 10px 0;
+        padding: 8px;
+        background: #f5f5f5;
+        text-align: center;
+        border-radius: 3px;
+      }
+      .product-item {
+        margin-bottom: 8px;
+      }
+      .product-item label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .custom-tag {
+        background: #ff6b35;
+        color: white;
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 3px;
+      }
+      .one-size-section {
+        grid-column: 1 / -1;
+      }
+      .one-size-section .products-grid {
+        grid-template-columns: 1fr;
+      }
+      label {
+        display: block;
+      }
+      #phoneError {
+        color: red;
+        display: none;
+      }
+      .sales-manager-note {
+        color: red;
+        font-size: 0.9em;
+        margin-bottom: 10px;
+      }
+      .form-section {
+        margin-bottom: 20px;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+      }
+      :root {
+        --apx-black: #191938;
+        --apx-red: #c10000;
+        --apx-light-grey: #ececec;
+        --apx-dark-grey: #5b5b5b;
+        --font-primary: "Arial", sans-serif;
+      }
 
-  body {
-    font-family: var(--font-primary);
-    margin: 20px;
-    position: relative;
-    padding-top: 80px;
-  }
+      body {
+        font-family: var(--font-primary);
+        margin: 20px;
+        position: relative;
+        padding-top: 80px;
+      }
 
-  h2, h3 {
-    color: var(--apx-black);
-  }
+      h2,
+      h3 {
+        color: var(--apx-black);
+      }
 
-  .apx-logo {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    max-width: 180px;
-    height: auto;
-    z-index: 1000;
-  }
+      .apx-logo {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        max-width: 180px;
+        height: auto;
+        z-index: 1000;
+      }
 
-  @media (max-width: 600px) {
-    .apx-logo {
-      max-width: 120px;
-    }
-  }
+      @media (max-width: 600px) {
+        .apx-logo {
+          max-width: 120px;
+        }
+      }
 
-  @media (max-width: 480px) {
-    .apx-logo {
-      content: url('https://raw.githubusercontent.com/AkhHas2005/APX/main/img/APX-Portrait-Black.png');
-      max-width: 100px;
-    }
-  }
+      @media (max-width: 480px) {
+        .apx-logo {
+          content: url("https://raw.githubusercontent.com/AkhHas2005/APX/main/img/APX-Portrait-Black.png");
+          max-width: 100px;
+        }
+      }
 
-  table {
-    border-collapse: collapse;
-    width: 100%;
-    margin-bottom: 20px;
-    table-layout: fixed;
-  }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-bottom: 20px;
+        table-layout: fixed;
+      }
 
-  th, td {
-    border: 1px solid #ccc;
-    padding: 8px;
-    text-align: center;
-    overflow: hidden;
-  }
+      th,
+      td {
+        border: 1px solid #ccc;
+        padding: 8px;
+        text-align: center;
+        overflow: hidden;
+      }
 
-  img {
-    max-width: 150px;
-  }
+      img {
+        max-width: 150px;
+      }
 
-  .table-wrapper {
-    overflow-x: auto;
-    margin-bottom: 20px;
-  }
+      .table-wrapper {
+        overflow-x: auto;
+        margin-bottom: 20px;
+      }
 
-  .select-all-btn {
-    background: var(--apx-red);
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 3px;
-    cursor: pointer;
-    font-size: 12px;
-  }
+      .select-all-btn {
+        background: var(--apx-red);
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 12px;
+      }
 
-  .select-all-btn:hover {
-    background: #a00000;
-  }
+      .select-all-btn:hover {
+        background: #a00000;
+      }
 
-  button[type="submit"] {
-    background: var(--apx-black);
-    color: white;
-    padding: 12px 24px;
-    border: none;
-    border-radius: 5px;
-    font-size: 16px;
-    cursor: pointer;
-  }
+      button[type="submit"] {
+        background: var(--apx-black);
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+      }
 
-  button[type="submit"]:hover {
-    background: #000;
-  }
-</style>
+      button[type="submit"]:hover {
+        background: #000;
+      }
+    </style>
+  </head>
+  <body>
+    <img
+      src="https://raw.githubusercontent.com/AkhHas2005/APX/main/img/APX-Landscape-Black.png"
+      alt="APX Performance Logo"
+      class="apx-logo"
+    />
+    <h2>Start Your Kit Order</h2>
+    <form id="initialForm">
+      <div class="form-section">
+        <label>Name:</label>
+        <input type="text" name="name" required /><br />
 
-</head>
-<body>
-  <img src="https://raw.githubusercontent.com/AkhHas2005/APX/main/img/APX-Landscape-Black.png" alt="APX Performance Logo" class="apx-logo">
-  <h2>Start Your Kit Order</h2>
-  <form id="initialForm">
-    <div class="form-section">
-      <label>Name:</label>
-      <input type="text" name="name" required><br>
+        <label>Email:</label>
+        <input type="email" name="email" required /><br />
 
-      <label>Email:</label>
-      <input type="email" name="email" required><br>
+        <label>Sales Manager:</label>
+        <select name="salesManager" required>
+          <option value="">Choose 1</option>
+          <option value="James">James</option>
+          <option value="Craig">Craig</option></select
+        ><br />
+        <div class="sales-manager-note">
+          This is your Sales rep from APX – either James or Craig
+        </div>
 
-      <label>Sales Manager:</label>
-      <select name="salesManager" required>
-        <option value="">Choose 1</option>
-        <option value="James">James</option>
-        <option value="Craig">Craig</option>
-      </select><br>
-      <div class="sales-manager-note">
-        This is your Sales rep from APX – either James or Craig
+        <label>Phone Number:</label>
+        <input type="text" id="phone" name="phone" required /><br />
+        <div id="phoneError">Please enter a valid phone number.</div>
+        <br />
+
+        <label>Club Name:</label>
+        <input type="text" name="clubName" /><br />
       </div>
 
-      <label>Phone Number:</label>
-      <input type="text" id="phone" name="phone" required><br>
-      <div id="phoneError">Please enter a valid phone number.</div><br>
+      <div id="productSelection"></div>
 
-      <label>Club Name:</label>
-      <input type="text" name="clubName"><br>
-    </div>
-
-    <div id="productSelection"></div>
-
-    <button type="submit" style="background: #007cba; color: white; padding: 12px 24px; border: none; border-radius: 5px; font-size: 16px; cursor: pointer;">Continue</button>
-  </form>
+      <button
+        type="submit"
+        style="
+          background: #007cba;
+          color: white;
+          padding: 12px 24px;
+          border: none;
+          border-radius: 5px;
+          font-size: 16px;
+          cursor: pointer;
+        "
+      >
+        Continue
+      </button>
+    </form>
 
     <!-- Replace the JavaScript section (around lines 80-180) -->
-  
-  <script>
-    const productRanges = {
-      "PLAYING RANGE": {
-        products: [
-          { name: "Home Match T-Shirt", custom: true },
-          { name: "Home Match Shirt (Long Sleeve)", custom: true },
-          { name: "Home Goalkeeper Shirt (Long Sleeve)", custom: true },
-          { name: "Home Match Shorts", custom: true },
-          { name: "Home Match Socks", custom: false },
-          { name: "Away Match T-Shirt", custom: true },
-          { name: "Away Match Shirt (Long Sleeve)", custom: true },
-          { name: "Away Goalkeeper Shirt (Long Sleeve)", custom: true },
-          { name: "Away Match Shorts", custom: true },
-          { name: "Away Match Socks", custom: false }
-        ],
-        hasAgeGroups: true
-      },
-      "TRAINING RANGE": {
-        products: [
-          { name: "1/4 Zip Tracksuit Top", custom: true },
-          { name: "Zipped Hoodie", custom: true },
-          { name: "Hoodie", custom: false },
-          { name: "Sweatshirt", custom: false },
-          { name: "Full Zip Tracksuit Top", custom: false },
-          { name: "Polo Shirt", custom: false },
-          { name: "Track Pants", custom: true },
-          { name: "Sub Training Shorts", custom: false },
-          { name: "Leisure Shorts", custom: false },
-          { name: "Sub Training T-Shirt", custom: true },
-          { name: "Leisure T-Shirt", custom: false },
-          { name: "Sub Training Vest", custom: true }
-        ],
-        hasAgeGroups: true
-      },
-      "JACKETS": {
-        products: [
-          { name: "Hybrid Hoodie", custom: false },
-          { name: "Coach Jacket", custom: false },
-          { name: "Shower Jacket", custom: false },
-          { name: "Hybrid Jacket", custom: false },
-          { name: "Gilet", custom: false },
-          { name: "Long Bench Jacket", custom: false }
-        ],
-        hasAgeGroups: true
-      },
-      "ACCESSORIES": {
-        products: [
-          { name: "Gloves", custom: false },
-          { name: "Training Socks", custom: false },
-          { name: "Player Towel", custom: false },
-          { name: "Club Backpack", custom: false },
-          { name: "Sliders", custom: false },
-          { name: "Bucket Hat", custom: false },
-          { name: "Snood", custom: false },
-          { name: "Bobble Hat", custom: false }
-        ],
-        hasAgeGroups: false
-      }
-    };
-  
-    const productSelection = document.getElementById('productSelection');
-    
-    for (const [rangeName, rangeData] of Object.entries(productRanges)) {
-      const section = document.createElement('div');
-      section.className = 'range-section';
-      
-      const header = document.createElement('div');
-      header.className = 'range-header';
-      header.innerHTML = `
+
+    <script>
+      const productRanges = {
+        "PLAYING RANGE": {
+          products: [
+            { name: "Home Match T-Shirt", custom: true },
+            { name: "Home Match Shirt (Long Sleeve)", custom: true },
+            { name: "Home Goalkeeper Shirt (Long Sleeve)", custom: true },
+            { name: "Home Match Shorts", custom: true },
+            { name: "Home Match Socks", custom: false },
+            { name: "Away Match T-Shirt", custom: true },
+            { name: "Away Match Shirt (Long Sleeve)", custom: true },
+            { name: "Away Goalkeeper Shirt (Long Sleeve)", custom: true },
+            { name: "Away Match Shorts", custom: true },
+            { name: "Away Match Socks", custom: false },
+          ],
+          hasAgeGroups: true,
+        },
+        "TRAINING RANGE": {
+          products: [
+            { name: "1/4 Zip Tracksuit Top", custom: true },
+            { name: "Zipped Hoodie", custom: true },
+            { name: "Hoodie", custom: false },
+            { name: "Sweatshirt", custom: false },
+            { name: "Full Zip Tracksuit Top", custom: false },
+            { name: "Polo Shirt", custom: false },
+            { name: "Track Pants", custom: true },
+            { name: "Sub Training Shorts", custom: false },
+            { name: "Leisure Shorts", custom: false },
+            { name: "Sub Training T-Shirt", custom: true },
+            { name: "Leisure T-Shirt", custom: false },
+            { name: "Sub Training Vest", custom: true },
+          ],
+          hasAgeGroups: true,
+        },
+        JACKETS: {
+          products: [
+            { name: "Hybrid Hoodie", custom: false },
+            { name: "Coach Jacket", custom: false },
+            { name: "Shower Jacket", custom: false },
+            { name: "Hybrid Jacket", custom: false },
+            { name: "Gilet", custom: false },
+            { name: "Long Bench Jacket", custom: false },
+          ],
+          hasAgeGroups: true,
+        },
+        ACCESSORIES: {
+          products: [
+            { name: "Gloves", custom: false },
+            { name: "Training Socks", custom: false },
+            { name: "Player Towel", custom: false },
+            { name: "Club Backpack", custom: false },
+            { name: "Sliders", custom: false },
+            { name: "Bucket Hat", custom: false },
+            { name: "Snood", custom: false },
+            { name: "Bobble Hat", custom: false },
+          ],
+          hasAgeGroups: false,
+        },
+      };
+
+      const productSelection = document.getElementById("productSelection");
+
+      for (const [rangeName, rangeData] of Object.entries(productRanges)) {
+        const section = document.createElement("div");
+        section.className = "range-section";
+
+        const header = document.createElement("div");
+        header.className = "range-header";
+        header.innerHTML = `
         <h3>${rangeName}</h3>
         <button type="button" class="select-all-btn" onclick="selectAllInRange('${rangeName}')">Select All</button>
       `;
-      section.appendChild(header);
-  
-      if (rangeData.hasAgeGroups) {
-        const grid = document.createElement('div');
-        grid.className = 'products-grid';
-        
-        // Adult column with its own select all
-        const adultDiv = document.createElement('div');
-        adultDiv.className = 'age-group';
-        adultDiv.innerHTML = `
+        section.appendChild(header);
+
+        if (rangeData.hasAgeGroups) {
+          const grid = document.createElement("div");
+          grid.className = "products-grid";
+
+          // Adult column with its own select all
+          const adultDiv = document.createElement("div");
+          adultDiv.className = "age-group";
+          adultDiv.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: center; margin: 0 0 10px 0; padding: 8px; background: #f5f5f5; border-radius: 3px;">
             <h4 style="margin: 0;">ADULT</h4>
             <button type="button" class="select-all-btn" style="font-size: 10px; padding: 3px 6px;" onclick="selectAllInAgeGroup('${rangeName}', 'Adult')">Select All</button>
           </div>
         `;
-        
-        rangeData.products.forEach(product => {
-          const div = document.createElement('div');
-          div.className = 'product-item';
-          div.innerHTML = `
+
+          rangeData.products.forEach((product) => {
+            const div = document.createElement("div");
+            div.className = "product-item";
+            div.innerHTML = `
             <label>
-              <input type="checkbox" name="products" value="Adult ${product.name}" data-range="${rangeName}" data-age="Adult">
-              ${product.name} ${product.custom ? '<span class="custom-tag">Custom</span>' : ''}
+              <input type="checkbox" name="products" value="Adult ${
+                product.name
+              }" data-range="${rangeName}" data-age="Adult">
+              ${product.name} ${
+              product.custom ? '<span class="custom-tag">Custom</span>' : ""
+            }
             </label>
           `;
-          adultDiv.appendChild(div);
-        });
-        
-        // Junior column with its own select all
-        const juniorDiv = document.createElement('div');
-        juniorDiv.className = 'age-group';
-        juniorDiv.innerHTML = `
+            adultDiv.appendChild(div);
+          });
+
+          // Junior column with its own select all
+          const juniorDiv = document.createElement("div");
+          juniorDiv.className = "age-group";
+          juniorDiv.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: center; margin: 0 0 10px 0; padding: 8px; background: #f5f5f5; border-radius: 3px;">
             <h4 style="margin: 0;">JUNIOR</h4>
             <button type="button" class="select-all-btn" style="font-size: 10px; padding: 3px 6px;" onclick="selectAllInAgeGroup('${rangeName}', 'Junior')">Select All</button>
           </div>
         `;
-        
-        rangeData.products.forEach(product => {
-          const div = document.createElement('div');
-          div.className = 'product-item';
-          div.innerHTML = `
+
+          rangeData.products.forEach((product) => {
+            const div = document.createElement("div");
+            div.className = "product-item";
+            div.innerHTML = `
             <label>
-              <input type="checkbox" name="products" value="Junior ${product.name}" data-range="${rangeName}" data-age="Junior">
-              ${product.name} ${product.custom ? '<span class="custom-tag">Custom</span>' : ''}
+              <input type="checkbox" name="products" value="Junior ${
+                product.name
+              }" data-range="${rangeName}" data-age="Junior">
+              ${product.name} ${
+              product.custom ? '<span class="custom-tag">Custom</span>' : ""
+            }
             </label>
           `;
-          juniorDiv.appendChild(div);
-        });
-        
-        grid.appendChild(adultDiv);
-        grid.appendChild(juniorDiv);
-        section.appendChild(grid);
-      } else {
-        // One-size items (Accessories)
-        const oneSizeDiv = document.createElement('div');
-        oneSizeDiv.className = 'one-size-section';
-        
-        const grid = document.createElement('div');
-        grid.className = 'products-grid';
-        
-        rangeData.products.forEach(product => {
-          const div = document.createElement('div');
-          div.className = 'product-item';
-          div.innerHTML = `
+            juniorDiv.appendChild(div);
+          });
+
+          grid.appendChild(adultDiv);
+          grid.appendChild(juniorDiv);
+          section.appendChild(grid);
+        } else {
+          // One-size items (Accessories)
+          const oneSizeDiv = document.createElement("div");
+          oneSizeDiv.className = "one-size-section";
+
+          const grid = document.createElement("div");
+          grid.className = "products-grid";
+
+          rangeData.products.forEach((product) => {
+            const div = document.createElement("div");
+            div.className = "product-item";
+            div.innerHTML = `
             <label>
-              <input type="checkbox" name="products" value="${product.name}" data-range="${rangeName}">
-              ${product.name} (One Size) ${product.custom ? '<span class="custom-tag">Custom</span>' : ''}
+              <input type="checkbox" name="products" value="${
+                product.name
+              }" data-range="${rangeName}">
+              ${product.name} (One Size) ${
+              product.custom ? '<span class="custom-tag">Custom</span>' : ""
+            }
             </label>
           `;
-          grid.appendChild(div);
+            grid.appendChild(div);
+          });
+
+          oneSizeDiv.appendChild(grid);
+          section.appendChild(oneSizeDiv);
+        }
+
+        productSelection.appendChild(section);
+      }
+
+      // Select all in range function
+      function selectAllInRange(rangeName) {
+        const checkboxes = document.querySelectorAll(
+          `input[data-range="${rangeName}"]`
+        );
+        const allChecked = Array.from(checkboxes).every((cb) => cb.checked);
+
+        checkboxes.forEach((checkbox) => {
+          checkbox.checked = !allChecked;
         });
-        
-        oneSizeDiv.appendChild(grid);
-        section.appendChild(oneSizeDiv);
       }
-      
-      productSelection.appendChild(section);
-    }
-  
-    // Select all in range function
-    function selectAllInRange(rangeName) {
-      const checkboxes = document.querySelectorAll(`input[data-range="${rangeName}"]`);
-      const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-      
-      checkboxes.forEach(checkbox => {
-        checkbox.checked = !allChecked;
-      });
-    }
-  
-    // Select all in age group function
-    function selectAllInAgeGroup(rangeName, ageGroup) {
-      const checkboxes = document.querySelectorAll(`input[data-range="${rangeName}"][data-age="${ageGroup}"]`);
-      const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-      
-      checkboxes.forEach(checkbox => {
-        checkbox.checked = !allChecked;
-      });
-    }
-      
-    document.getElementById('initialForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const formData = new FormData(this);
-      const phone = formData.get('phone');
-      const regex = /^(?:\+44\s?7\d{3}|\(?07\d{3}\)?)\s?\d{3}\s?\d{3}$/;
-      const phoneError = document.getElementById("phoneError");
-    
-      if (!regex.test(phone)) {
-        phoneError.style.display = "block";
-        return;
-      } else {
-        phoneError.style.display = "none";
+
+      // Select all in age group function
+      function selectAllInAgeGroup(rangeName, ageGroup) {
+        const checkboxes = document.querySelectorAll(
+          `input[data-range="${rangeName}"][data-age="${ageGroup}"]`
+        );
+        const allChecked = Array.from(checkboxes).every((cb) => cb.checked);
+
+        checkboxes.forEach((checkbox) => {
+          checkbox.checked = !allChecked;
+        });
       }
-    
-      const name = encodeURIComponent(formData.get('clubName'));
-      const email = encodeURIComponent(formData.get('email'));
-      const phoneEncoded = encodeURIComponent(phone);
-      const salesManager = encodeURIComponent(formData.get('salesManager'));
-      const selected = formData.getAll('products');
-    
-      if (selected.length === 0) {
-        alert("Please select at least one product.");
-        return;
-      }
-    
-      // Log the selected products for debugging
-      console.log("Selected products:", selected);
-    
-      const products = selected.map(p => encodeURIComponent(p)).join(',');
-      const redirectUrl = `./sizes.html?name=${name}&email=${email}&phone=${phoneEncoded}&salesManager=${salesManager}&products=${products}`;
-      window.location.href = redirectUrl;
-    });
-  </script>
-</body>
+
+      document
+        .getElementById("initialForm")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+          const formData = new FormData(this);
+          const phone = formData.get("phone");
+          const regex = /^(?:\+44\s?7\d{3}|\(?07\d{3}\)?)\s?\d{3}\s?\d{3}$/;
+          const phoneError = document.getElementById("phoneError");
+
+          if (!regex.test(phone)) {
+            phoneError.style.display = "block";
+            return;
+          } else {
+            phoneError.style.display = "none";
+          }
+
+          const name = encodeURIComponent(formData.get("clubName"));
+          const email = encodeURIComponent(formData.get("email"));
+          const phoneEncoded = encodeURIComponent(phone);
+          const salesManager = encodeURIComponent(formData.get("salesManager"));
+          const selected = formData.getAll("products");
+
+          if (selected.length === 0) {
+            alert("Please select at least one product.");
+            return;
+          }
+
+          // Log the selected products for debugging
+          console.log("Selected products:", selected);
+
+          const productPairs = selected.map((p) => {
+            const ageGroup = p.startsWith("Junior ")
+              ? "Junior"
+              : p.startsWith("Adult ")
+              ? "Adult"
+              : "OneSize";
+            const baseName = p.replace(/^Junior |^Adult /, "");
+            return `${encodeURIComponent(baseName)}::${ageGroup}`;
+          });
+
+          const redirectUrl = `./sizes.html?name=${name}&email=${email}&phone=${phoneEncoded}&salesManager=${salesManager}&products=${productPairs.join(
+            ","
+          )}`;
+
+          window.location.href = redirectUrl;
+        });
+    </script>
+  </body>
 </html>
