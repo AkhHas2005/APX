@@ -39,12 +39,17 @@ async function parseCsv(url) {
 
     const map = {};
     for (let i = 1; i < rows.length; i++) {
-      const [name, imageUrl] = rows[i];
+      const [name, imageUrl, productCode] = rows[i];
       if (name && name.trim()) {
         const rawName = name.trim().replace(/"/g, "");
         const trueName = normalizeProductName(rawName);
         const cleanImageUrl = imageUrl ? imageUrl.trim().replace(/"/g, "") : "";
-        map[trueName] = { image: cleanImageUrl };
+        const cleanCode = productCode ? productCode.trim().replace(/"/g, "") : "";
+
+        map[trueName] = {
+          image: cleanImageUrl,
+          code: cleanCode
+        };
       }
     }
     return map;

@@ -62,24 +62,27 @@ function parseCSV(data) {
   lines.forEach(line => {
     const cols = line.split(",").map(c => c.trim());
     const first = cols[0];
-    const second = cols[1];
+    const joined = cols.join("").toUpperCase();
 
-    // Start new category if first column is ALL CAPS and second column is "PRODUCT CODE"
-    const isHeader = /^[A-Z0-9 ()\-]+$/.test(first) && second?.toUpperCase() === "PRODUCT CODE";
+    // Skip empty or comma-only lines
+    if (/^,*$/.test(line.trim())) return;
+
+    // Start new category if first cell is ALL CAPS and line contains "WSP"
+    const isHeader = /^[A-Z0-9 ()\-]+$/.test(first) && joined.includes("WSP");
     if (isHeader) {
       currentCat = { name: first, items: [] };
       categories.push(currentCat);
       return;
     }
 
-    // Skip lines with no product code
-    if (!second || !second.startsWith("APX/")) return;
+    const code = cols[1];
+    if (!code || !code.startsWith("APX/")) return;
 
     if (currentCat) {
       const clean = val => parseFloat(val?.replace(/[£� ]/g, "")) || 0;
       const item = {
         name: first,
-        code: second,
+        code,
         wsp: clean(cols[3]),
         prices: {
           C: clean(cols[4]),
@@ -103,11 +106,13 @@ function renderProductInputs() {
   addBtn.textContent = "Add Item";
   addBtn.className = "add-item-btn";
   addBtn.style.marginRight = "8px";
+  addBtn.title = "Adds a new product row to the calculator.";
   addBtn.addEventListener("click", () => addProductRow(container, true));
   container.appendChild(addBtn);
 
   const calcBtn = document.createElement("button");
   calcBtn.textContent = "Calculate Profit";
+  calcBtn.title = "Calculates total cost, revenue, and profit margin based on selected products and quantities.";
   calcBtn.addEventListener("click", calculateProfit);
   container.appendChild(calcBtn);
 }
@@ -118,18 +123,21 @@ function addProductRow(container, isRemovable) {
 
   const label = document.createElement("label");
   label.textContent = "Filter this row by search:";
+  label.title = "If checked, this row's dropdown will be filtered by the search box above.";
   label.style.marginRight = "6px";
 
   const filterToggle = document.createElement("input");
   filterToggle.type = "checkbox";
   filterToggle.className = "filter-toggle";
   filterToggle.checked = true;
+  filterToggle.title = "Toggle filtering for this row based on the search box.";
 
   row.appendChild(label);
   row.appendChild(filterToggle);
 
   const select = document.createElement("select");
   select.className = "product-select";
+  select.title = "Select a product from the dropdown list.";
   row.appendChild(select);
 
   const qty = document.createElement("input");
@@ -137,11 +145,13 @@ function addProductRow(container, isRemovable) {
   qty.min = 0;
   qty.value = 0;
   qty.className = "qty-input";
+  qty.title = "Enter the quantity for this product.";
   row.appendChild(qty);
 
   if (isRemovable) {
     const rm = document.createElement("button");
     rm.textContent = "Remove";
+    rm.title = "Remove this product row from Profit Calculations.";
     rm.addEventListener("click", () => row.remove());
     row.appendChild(rm);
   }

@@ -10,22 +10,23 @@
   <h1>APX Order Cost Calculator</h1>
 
   <section id="controls">
-    <label for="tier">Pricing Tier:</label>
-    <select id="tier">
+    <label for="tier" title="Select the pricing tier to apply across all products.">Pricing Tier:</label>
+    <select id="tier" title="Select the pricing tier to apply across all products.">
       <option value="C">C</option>
       <option value="B">B</option>
       <option value="A">A</option>
       <option value="A+">A+</option>
     </select>
 
-    <label for="discount">Discount (%):</label>
-    <input type="number" id="discount" value="0" />
-    <button id="loadData">Load Product Data</button>
+    <label for="discount" title="Enter a discount percentage to apply across all products.">Discount (%):</label>
+    <input type="number" id="discount" value="0" title="Enter a discount percentage to apply across all products." />
+
+    <button id="loadData" title="Loads product data from the master price list. Only needed once.">Load Product Data</button>
   </section>
 
   <section id="search">
-    <label for="searchInput">Search Product Code:</label>
-    <input type="text" id="searchInput" placeholder="Type to filter..." />
+    <label for="searchInput"><strong>Search Product Code or Name:</strong></label>
+    <input type="text" id="searchInput" placeholder="Type to filter..." title="Type part of a product name or code to filter dropdowns" />
   </section>
 
   <section id="productList"></section>
