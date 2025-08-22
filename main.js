@@ -143,11 +143,11 @@ function updatePersonalisation(productId, trueName, size, count) {
 
 async function buildForm() {
   const urlParams = new URLSearchParams(window.location.search);
-  const name = urlParams.get("name") || "";
+  const customerName = urlParams.get("name") || "";
+  const clubName = urlParams.get("clubName") || customerName; // fallback if clubName missing
   const email = urlParams.get("email") || "";
   const phone = urlParams.get("phone") || "";
   const salesManager = urlParams.get("salesManager") || "";
-  const clubName = urlParams.get("clubName") || "";
   const productsParam = urlParams.get("products") || "";
 
   const selectedProducts = productsParam
@@ -158,15 +158,15 @@ async function buildForm() {
     })
     .filter((p) => p.name && p.ageGroup);
 
-  document.getElementById("formHeading").innerText = `Select Sizes & Quantities for ${name}`;
+  document.getElementById("formHeading").innerText = `Select Sizes & Quantities for ${customerName}`;
   const productData = await parseCsv(csvUrl);
   const form = document.getElementById("sizeForm");
 
-  form.innerHTML += `<input type="hidden" name="name" value="${name}">
+  form.innerHTML += `<input type="hidden" name="name" value="${customerName}">
+                     <input type="hidden" name="clubName" value="${clubName}">
                      <input type="hidden" name="email" value="${email}">
                      <input type="hidden" name="phone" value="${phone}">
                      <input type="hidden" name="salesManager" value="${salesManager}">
-                     <input type="hidden" name="clubName" value="${clubName}">
                      <input type="hidden" name="productCount" value="${selectedProducts.length}">`;
 
   const personalisedItems = {
@@ -198,7 +198,7 @@ async function buildForm() {
     const ageGroup = original.ageGroup;
     const baseName = trueName.replace(/ \(Junior\)| \(Adult\)/, "");
 
-    const clubSpecificKey = `${name} ${baseName}`;
+    const clubSpecificKey = `${clubName} ${baseName}`;
     const defaultKey = baseName;
 
     const clubData = productData[clubSpecificKey];
@@ -206,7 +206,7 @@ async function buildForm() {
 
     const sizes = determineSizes(trueName, ageGroup);
     const imageUrl = clubData?.image || defaultData?.image || "";
-    const productCode = defaultData?.code || "";
+    const productCode = clubData?.code || defaultData?.code || "";
 
     const productId = `product_${i}`;
 
