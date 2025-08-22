@@ -147,6 +147,7 @@ async function buildForm() {
   const email = urlParams.get("email") || "";
   const phone = urlParams.get("phone") || "";
   const salesManager = urlParams.get("salesManager") || "";
+  const clubName = urlParams.get("clubName") || "";
   const productsParam = urlParams.get("products") || "";
 
   const selectedProducts = productsParam
@@ -165,6 +166,7 @@ async function buildForm() {
                      <input type="hidden" name="email" value="${email}">
                      <input type="hidden" name="phone" value="${phone}">
                      <input type="hidden" name="salesManager" value="${salesManager}">
+                     <input type="hidden" name="clubName" value="${clubName}">
                      <input type="hidden" name="productCount" value="${selectedProducts.length}">`;
 
   const personalisedItems = {
@@ -204,11 +206,13 @@ async function buildForm() {
 
     const sizes = determineSizes(trueName, ageGroup);
     const imageUrl = clubData?.image || defaultData?.image || "";
+    const productCode = defaultData?.code || "";
 
     const productId = `product_${i}`;
 
     form.innerHTML += `<h3 style="margin-top:30px;">${trueName}</h3>
       <input type="hidden" name="${productId}_name" value="${trueName}">
+      <input type="hidden" name="${productId}_code" value="${productCode}">
       <table><thead><tr>
         <th style="width: 200px;">${imageUrl ? `<img src="${imageUrl}">` : ""}</th>
         ${sizes.map(size => `<th style="width: 80px; min-width: 60px;">${size}</th>`).join("")}
@@ -217,7 +221,6 @@ async function buildForm() {
           oninput="updatePersonalisation('${productId}', '${trueName}', '${size}', this.value)"></td>`).join("")}
       </tr></tbody></table>`;
 
-    // Personalisation table
     if (personalisedItems.trainingWear.includes(baseName)) {
       form.innerHTML += `
         <h4>Personalisation for ${trueName}</h4>
