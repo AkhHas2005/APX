@@ -26,11 +26,17 @@ function updateDropdowns() {
   document.querySelectorAll(".product-row").forEach(row => {
     const checkbox = row.querySelector(".filter-toggle");
     const select = row.querySelector(".product-select");
+    const currentValue = select.value;
 
     if (checkbox.checked && filteredCodes.length > 0) {
       populateDropdown(select, filteredCodes);
     } else {
       populateDropdown(select); // show all
+    }
+
+    // Restore previous selection if still valid
+    if (currentValue) {
+      select.value = currentValue;
     }
   });
 }
@@ -57,46 +63,46 @@ function parseCSV(data) {
   productMap = {};
   let currentCat = null;
 
-  const lines = data.split("\n");
+  const lines = data
+    .split("\n")
+    .map(line => line.trim())
+    .filter(line => line && !/^,*$/.test(line)); // remove blank and comma-only lines
 
   lines.forEach(line => {
     const cols = line.split(",").map(c => c.trim());
     const first = cols[0];
-    const second = cols[1]?.trim().toUpperCase();
-    const joined = cols.join("").toUpperCase();
+    const code = cols[1];
 
-    // Skip empty or comma-only lines
-    if (/^,*$/.test(line.trim())) return;
-
-    // Start new category if:
-    // - First column is ALL CAPS
-    // - Line contains "WSP"
-    // - Second column is "PRODUCT CODE" or empty
+    // Start new category if first column is ALL CAPS
     const isAllCaps = /^[A-Z0-9 ()\-]+$/.test(first) && first === first.toUpperCase();
-    const isHeader = isAllCaps && joined.includes("WSP") && (!second || second === "PRODUCT CODE");
-
-    if (isHeader) {
+    if (isAllCaps) {
       currentCat = { name: first, items: [] };
       categories.push(currentCat);
       return;
     }
 
-    const code = cols[1];
+    // Skip rows without valid product code
     if (!code || !code.startsWith("APX/")) return;
 
     if (currentCat) {
       const clean = val => parseFloat(val?.replace(/[£� ]/g, "")) || 0;
+
+      // Detect if column 3 is numeric (WSP), else shift columns
+      const wspIndex = isNaN(clean(cols[3])) ? 4 : 3;
+      const priceOffset = wspIndex;
+
       const item = {
         name: first,
         code,
-        wsp: clean(cols[3]),
+        wsp: clean(cols[wspIndex]),
         prices: {
-          C: clean(cols[4]),
-          B: clean(cols[6]),
-          A: clean(cols[8]),
-          "A+": clean(cols[10])
+          C: clean(cols[priceOffset + 1]),
+          B: clean(cols[priceOffset + 3]),
+          A: clean(cols[priceOffset + 5]),
+          "A+": clean(cols[priceOffset + 7])
         }
       };
+
       currentCat.items.push(item);
       productMap[item.code] = item;
     }
