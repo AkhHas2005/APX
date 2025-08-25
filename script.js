@@ -62,13 +62,19 @@ function parseCSV(data) {
   lines.forEach(line => {
     const cols = line.split(",").map(c => c.trim());
     const first = cols[0];
+    const second = cols[1]?.trim().toUpperCase();
     const joined = cols.join("").toUpperCase();
 
     // Skip empty or comma-only lines
     if (/^,*$/.test(line.trim())) return;
 
-    // Start new category if first cell is ALL CAPS and line contains "WSP"
-    const isHeader = /^[A-Z0-9 ()\-]+$/.test(first) && joined.includes("WSP");
+    // Start new category if:
+    // - First column is ALL CAPS
+    // - Line contains "WSP"
+    // - Second column is "PRODUCT CODE" or empty
+    const isAllCaps = /^[A-Z0-9 ()\-]+$/.test(first) && first === first.toUpperCase();
+    const isHeader = isAllCaps && joined.includes("WSP") && (!second || second === "PRODUCT CODE");
+
     if (isHeader) {
       currentCat = { name: first, items: [] };
       categories.push(currentCat);
